@@ -8,11 +8,11 @@
     <h4 class="mb-0 text-white"><i class="fa-solid fa-shield-halved text-primary"></i> TrinitySim</h4>
 </div>
 <nav class="nav flex-column">
-    <a class="nav-link user-dashboard-link" href="{{ url_for('dashboard_user') }}"><i class="fa fa-home me-2"></i> Overview</a>
-    <a class="nav-link user-dashboard-link active" href="{{ url_for('tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks</a>
-    <a class="nav-link user-dashboard-link" href="{{ url_for('chat') }}"><i class="fa fa-comments me-2"></i> Chat</a>
-    <a class="nav-link user-dashboard-link" href="{{ url_for('documents') }}"><i class="fa fa-folder-open me-2"></i> Documents</a>
-    <a class="nav-link text-danger mt-auto" href="{{ url_for('logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.dashboard_user') }}"><i class="fa fa-home me-2"></i> Overview</a>
+    <a class="nav-link user-dashboard-link active" href="{{ url_for('user.tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.chat') }}"><i class="fa fa-comments me-2"></i> Chat</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.documents') }}"><i class="fa fa-folder-open me-2"></i> Documents</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
 </nav>
 {% endblock %}
 
@@ -55,24 +55,15 @@
                         </td>
                         <td>
                             {% if task.status == 'Pending' %}
-                                <form method="POST" action="{{ url_for('upload_proof', task_id=task.id) }}" enctype="multipart/form-data" class="d-inline">
+                                <form method="POST" action="{{ url_for('user.upload_proof', task_id=task.id) }}" enctype="multipart/form-data">
                                     {{ form.hidden_tag() }}
-                                    <div class="input-group" style="max-width: 300px;">
+                                    <div class="input-group">
                                         {{ form.proof(class="form-control form-control-sm") }}
-                                        <button type="submit" class="btn btn-sm btn-primary">
-                                            <i class="fa fa-upload"></i>
-                                        </button>
+                                        {{ form.submit(class="btn btn-sm btn-primary") }}
                                     </div>
                                 </form>
                             {% else %}
-                                <span class="badge bg-success me-2">
-                                    <i class="fa fa-check-circle"></i> Completed
-                                </span>
-                                {% if task.proof_file %}
-                                <a href="{{ url_for('static', filename='uploads/' + task.proof_file) }}" target="_blank" class="text-primary">
-                                    <i class="fa fa-file"></i> View Proof
-                                </a>
-                                {% endif %}
+                                <i class="fa fa-check-circle text-success"></i> <a href="{{ url_for('static', filename='uploads/' + task.proof_file) }}" target="_blank">{{ task.proof_file }}</a>
                             {% endif %}
                         </td>
                     </tr>

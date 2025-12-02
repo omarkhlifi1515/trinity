@@ -99,7 +99,49 @@
         .chef-theme .card-title { color: #4ade80; font-weight: bold; }
         .chef-theme .text-success-custom { color: #4ade80 !important; }
         .chef-theme .form-control:focus, .chef-theme .form-select:focus { border-color: #16a34a; }
-        .chef-theme .btn-success-custom { background-color: #16a34a; border-color: #16a34a; }
+        .chef-theme .btn-success-custom { 
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            border-color: #16a34a;
+            color: white;
+        }
+        .chef-theme .btn-success-custom:hover {
+            background: linear-gradient(135deg, #15803d, #166534);
+            transform: translateY(-1px);
+        }
+        
+        /* Loading animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        
+        /* Better focus states */
+        .form-control:focus,
+        .form-select:focus,
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+        
+        /* Improved table styling */
+        .table-hover tbody tr {
+            cursor: pointer;
+        }
+        
+        /* Badge improvements */
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
         
     </style>
 </head>

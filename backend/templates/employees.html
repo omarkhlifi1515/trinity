@@ -25,38 +25,137 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header"><h5 class="card-title mb-0"><i class="fa fa-users-viewfinder me-2"></i> Employee Presence</h5></div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="fa fa-users me-2"></i> Employee Presence</h5>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text bg-transparent border-secondary text-white-50">
+                    <i class="fa fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="search-input" placeholder="Search employees...">
+            </div>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="filter-status" id="filter-all" value="all" checked>
+                <label class="btn btn-outline-secondary btn-sm" for="filter-all">All</label>
+                
+                <input type="radio" class="btn-check" name="filter-status" id="filter-present" value="present">
+                <label class="btn btn-outline-success btn-sm" for="filter-present">Present</label>
+                
+                <input type="radio" class="btn-check" name="filter-status" id="filter-absent" value="absent">
+                <label class="btn btn-outline-secondary btn-sm" for="filter-absent">Absent</label>
+            </div>
+        </div>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-borderless table-hover">
+            <table class="table table-borderless table-hover" id="employees-table">
                 <thead>
                     <tr>
                         <th>Employee</th>
                         <th>Status</th>
                         <th>Last Seen</th>
+                        <th>Department</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for employee in employees %}
-                    <tr>
-                        <td>{{ employee.username }}</td>
+                    <tr data-username="{{ employee.username|lower }}" data-status="{{ employee.status|lower }}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                    {{ employee.username[0]|upper }}
+                                </div>
+                                <span class="fw-medium">{{ employee.username }}</span>
+                            </div>
+                        </td>
                         <td>
                             {% if employee.status == 'Present' %}
-                                <span class="badge bg-success">{{ employee.status }}</span>
+                                <span class="badge bg-success">
+                                    <i class="fa fa-circle me-1" style="font-size: 0.5rem;"></i>{{ employee.status }}
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ employee.status }}</span>
+                                <span class="badge bg-secondary">
+                                    <i class="fa fa-circle me-1" style="font-size: 0.5rem;"></i>{{ employee.status }}
+                                </span>
                             {% endif %}
                         </td>
-                        <td>{{ employee.last_seen }}</td>
+                        <td>
+                            <small class="text-muted">{{ employee.last_seen }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ employee.department if employee.department else 'General' }}</span>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3" class="text-center">No employees found.</td>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i class="fa fa-users fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">No employees found.</p>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        <div id="no-results" class="text-center text-muted py-4" style="display: none;">
+            <i class="fa fa-search fa-2x mb-2 opacity-50"></i>
+            <p class="mb-0">No employees match your search criteria.</p>
+        </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const filterRadios = document.querySelectorAll('input[name="filter-status"]');
+        const table = document.getElementById('employees-table');
+        const tbody = table.querySelector('tbody');
+        const noResults = document.getElementById('no-results');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedFilter = document.querySelector('input[name="filter-status"]:checked').value;
+            
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                if (row.querySelector('td[colspan]')) {
+                    // Skip the "no employees" row
+                    row.style.display = 'none';
+                    return;
+                }
+
+                const username = row.getAttribute('data-username') || '';
+                const status = row.getAttribute('data-status') || '';
+                
+                const matchesSearch = username.includes(searchTerm);
+                const matchesFilter = selectedFilter === 'all' || 
+                    (selectedFilter === 'present' && status === 'present') ||
+                    (selectedFilter === 'absent' && status === 'absent');
+
+                if (matchesSearch && matchesFilter) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show/hide no results message
+            if (visibleCount === 0 && (searchTerm || selectedFilter !== 'all')) {
+                noResults.style.display = 'block';
+                table.style.display = 'none';
+            } else {
+                noResults.style.display = 'none';
+                table.style.display = '';
+            }
+        }
+
+        searchInput.addEventListener('input', filterTable);
+        filterRadios.forEach(radio => {
+            radio.addEventListener('change', filterTable);
+        });
+    });
+</script>
 {% endblock %}

@@ -60,10 +60,18 @@
     <!-- Current Tasks -->
     <div class="col-lg-7">
         <div class="card h-100">
-            <div class="card-header"><h5 class="card-title mb-0"><i class="fa fa-list-check me-2"></i> Current Tasks</h5></div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fa fa-list-check me-2"></i> Current Tasks</h5>
+                <div class="input-group" style="max-width: 250px;">
+                    <span class="input-group-text bg-transparent border-secondary text-white-50">
+                        <i class="fa fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control form-control-sm" id="task-search" placeholder="Search tasks...">
+                </div>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-borderless table-sm table-hover">
+                    <table class="table table-borderless table-sm table-hover" id="tasks-table">
                         <thead>
                             <tr>
                                 <th>Employee</th>
@@ -72,28 +80,89 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for user, tasks in all_tasks.items() %}
-                                {% for task in tasks %}
-                                <tr>
-                                    <td>{{ user }}</td>
-                                    <td>{{ task.description }}</td>
-                                    <td>
-                                        {% if task.status == 'Completed' %}
-                                            <span class="badge bg-success">Completed</span>
-                                        {% else %}
-                                            <span class="badge bg-warning">Pending</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                            {% if all_tasks %}
+                                {% for username, tasks in all_tasks.items() %}
+                                    {% for task in tasks %}
+                                    <tr data-employee="{{ username|lower }}" data-task="{{ (task.description if task.description else task.text)|lower }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle me-2" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #16a34a, #15803d); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.75rem;">
+                                                    {{ username[0]|upper }}
+                                                </div>
+                                                <span>{{ username }}</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ task.description if task.description else task.text }}</td>
+                                        <td>
+                                            {% if task.status == 'Completed' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fa fa-check-circle me-1"></i>Completed
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fa fa-clock me-1"></i>Pending
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
                                 {% endfor %}
                             {% else %}
-                                <tr><td colspan="3" class="text-center">No tasks assigned yet.</td></tr>
-                            {% endfor %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">
+                                    <i class="fa fa-tasks fa-2x mb-2 opacity-50"></i>
+                                    <p class="mb-0">No tasks assigned yet.</p>
+                                </td></tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('task-search');
+        if (searchInput) {
+            const table = document.getElementById('tasks-table');
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    if (row.querySelector('td[colspan]')) {
+                        row.style.display = 'none';
+                        return;
+                    }
+
+                    const employee = row.getAttribute('data-employee') || '';
+                    const task = row.getAttribute('data-task') || '';
+                    
+                    if (employee.includes(searchTerm) || task.includes(searchTerm)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Show no results if needed
+                if (visibleCount === 0 && searchTerm) {
+                    const noResults = document.createElement('tr');
+                    noResults.innerHTML = '<td colspan="3" class="text-center text-muted py-4">No tasks match your search.</td>';
+                    if (!table.querySelector('tbody').querySelector('.no-results')) {
+                        noResults.classList.add('no-results');
+                        table.querySelector('tbody').appendChild(noResults);
+                    }
+                } else {
+                    const noResults = table.querySelector('tbody .no-results');
+                    if (noResults) noResults.remove();
+                }
+            });
+        }
+    });
+</script>
 </div>
 {% endblock %}

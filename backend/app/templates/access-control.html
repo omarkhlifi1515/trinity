@@ -8,18 +8,18 @@
     <h4 class="mb-0 text-white"><i class="fa-solid fa-user-secret text-success-custom"></i> TrinitySim [Chef]</h4>
 </div>
 <nav class="nav flex-column">
-    <a class="nav-link chef-dashboard-link" href="{{ url_for('dashboard_chef') }}"><i class="fa fa-tachometer-alt me-2"></i> Dashboard</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.dashboard_chef') }}"><i class="fa fa-tachometer-alt me-2"></i> Dashboard</a>
     <hr class="text-white-50 mx-3">
     <h6 class="text-white-50 ms-3 mb-2">Management</h6>
-    <a class="nav-link chef-dashboard-link" href="{{ url_for('employees') }}"><i class="fa fa-users me-2"></i> Employees</a>
-    <a class="nav-link chef-dashboard-link" href="{{ url_for('task_management') }}"><i class="fa fa-tasks me-2"></i> Task Management</a>
-    <a class="nav-link chef-dashboard-link active" href="{{ url_for('access_control') }}"><i class="fa fa-key me-2"></i> Access Control</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.employees') }}"><i class="fa fa-users me-2"></i> Employees</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.task_management') }}"><i class="fa fa-tasks me-2"></i> Task Management</a>
+    <a class="nav-link chef-dashboard-link active" href="{{ url_for('chef.access_control') }}"><i class="fa fa-key me-2"></i> Access Control</a>
     <hr class="text-white-50 mx-3">
     <h6 class="text-white-50 ms-3 mb-2">User View</h6>
-    <a class="nav-link chef-dashboard-link" href="{{ url_for('tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks (View)</a>
-    <a class="nav-link chef-dashboard-link" href="{{ url_for('chat') }}"><i class="fa fa-comments me-2"></i> Chat (View)</a>
-    <a class="nav-link chef-dashboard-link" href="{{ url_for('documents') }}"><i class="fa fa-folder-open me-2"></i> Documents (View)</a>
-    <a class="nav-link text-danger mt-auto" href="{{ url_for('logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks (View)</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.chat') }}"><i class="fa fa-comments me-2"></i> Chat (View)</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.documents') }}"><i class="fa fa-folder-open me-2"></i> Documents (View)</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
 </nav>
 {% endblock %}
 
@@ -75,15 +75,9 @@
                                 {% if not user.has_role('CHEF') %}
                                 <tr>
                                     <td>{{ user.username }}</td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ user.department or 'General' }}</span>
-                                    </td>
+                                    <td>{{ user.department or 'N/A' }}</td>
                                 </tr>
                                 {% endif %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="2" class="text-center text-muted">No employees found.</td>
-                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>

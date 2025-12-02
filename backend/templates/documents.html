@@ -18,20 +18,47 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0"><i class="fa fa-folder-open me-2"></i> Received Files</h5>
+        <span class="badge bg-primary">{{ documents|length }} document{{ 's' if documents|length != 1 else '' }}</span>
     </div>
     <div class="card-body">
-        <ul class="list-group list-group-flush">
-            {% for doc in documents %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="fa {{ doc.icon }} me-2"></i> {{ doc.name }}</span>
-                <a href="{{ url_for('download', filename=doc.filename) }}" class="btn btn-sm btn-outline-primary"><i class="fa fa-download"></i></a>
-            </li>
-            {% else %}
-            <li class="list-group-item text-center">No documents received.</li>
-            {% endfor %}
-        </ul>
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>Document Name</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td>
+                            <i class="fa {{ doc.icon if doc.icon else 'fa-file' }} me-2"></i>
+                            {{ doc.name if doc.name else doc.filename }}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ doc.filename.split('.')[-1].upper() if doc.filename else 'N/A' }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('download', filename=doc.filename) }}" class="btn btn-sm btn-primary">
+                                <i class="fa fa-download me-1"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fa fa-folder-open fa-3x text-muted mb-3 opacity-50"></i>
+            <p class="text-muted">No documents available.</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
