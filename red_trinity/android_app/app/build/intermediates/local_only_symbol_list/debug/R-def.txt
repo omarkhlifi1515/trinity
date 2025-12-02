@@ -1,0 +1,16 @@
+R_DEF: Internal format may change without notice
+local
+id btnConnect
+id btnHistory
+id btnListTools
+id btnNmapScan
+id btnSystemInfo
+id buttonLayout
+id buttonLayout2
+id editTarget
+id outputText
+id scrollView
+id statusText
+id subtitleText
+id titleText
+layout activity_main
