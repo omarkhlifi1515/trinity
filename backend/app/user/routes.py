@@ -13,29 +13,20 @@ def roles_required(*required_roles):
     def wrapper(fn):
         @wraps(fn)
         def decorated_view(*args, **kwargs):
-            # If the user is not logged in, redirect them to login (with next)
+            # STRICT SECURITY REMOVED:
+            # We only check if the user is logged in. 
+            # We DO NOT check if they have the specific role (e.g. CHEF/USER).
             if not current_user.is_authenticated:
                 return redirect(url_for('auth.login', next=request.path))
-
-            # If the user is logged in but does not have required roles,
-            # show a friendly message and redirect them to their dashboard
-            if not all(current_user.has_role(role) for role in required_roles):
-                flash('You do not have permission to access that page.', 'warning')
-                # Prefer redirecting to the user's dashboard based on roles
-                if current_user.has_role('CHEF'):
-                    return redirect(url_for('chef.dashboard_chef'))
-                if current_user.has_role('USER'):
-                    return redirect(url_for('user.dashboard_user'))
-                # Fallback to login if no appropriate dashboard exists
-                return redirect(url_for('auth.login'))
-
+            
+            # Pass through for everyone
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
 
 @user.route('/dashboard-user', methods=['GET', 'POST'])
 @login_required
-@roles_required('USER')
+@roles_required('USER') # Now accessible by anyone logged in
 def dashboard_user():
     form = PresenceForm()
     if form.validate_on_submit():
@@ -65,8 +56,8 @@ def upload_proof(task_id):
     form = TaskProofForm()
     if form.validate_on_submit() and form.proof.data:
         task_to_update = Task.query.get_or_404(task_id)
-        if task_to_update.employee != current_user:
-            abort(403)
+        
+        # SECURITY REMOVED: No ownership check. Any user can upload proof.
         
         file = form.proof.data
         filename = secure_filename(file.filename)
@@ -122,11 +113,9 @@ def documents():
 @user.route('/download/<filename>')
 @login_required
 def download(filename):
-    user_docs = current_user.documents.all()
-    if any(doc.filename == filename for doc in user_docs):
-        secure_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'secure_documents')
-        return send_from_directory(secure_folder, filename, as_attachment=True)
-    abort(403)
+    # SECURITY REMOVED: Any logged-in user can download any file from the secure folder.
+    secure_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'secure_documents')
+    return send_from_directory(secure_folder, filename, as_attachment=True)
 
 @user.route('/profile')
 @login_required
