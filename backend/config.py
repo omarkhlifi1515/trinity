@@ -11,7 +11,11 @@ class Config:
     
     if database_url:
         # Running in cloud (Render with Postgres)
-        SQLALCHEMY_DATABASE_URI = database_url
+        # Fix SSL connection issues by requiring SSL
+        if '?' in database_url:
+            SQLALCHEMY_DATABASE_URI = database_url + '&sslmode=require'
+        else:
+            SQLALCHEMY_DATABASE_URI = database_url + '?sslmode=require'
     else:
         # Local development: try Google Drive path, fallback to local
         GOOGLE_DRIVE_DB_PATH = os.environ.get('GOOGLE_DRIVE_DB_PATH') or \
