@@ -4,6 +4,15 @@ from app import db, bcrypt
 from app.auth import auth
 from app.models import User, Role
 from app.forms import LoginForm, RegistrationForm
+from urllib.parse import urlparse, urljoin
+
+
+def is_safe_url(target):
+    """Ensure the redirect target is on the same host to prevent open redirects."""
+    host_url = request.host_url
+    ref_url = urlparse(host_url)
+    test_url = urlparse(urljoin(host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
@@ -31,10 +40,17 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user)
+            # Only honor next if it's a safe URL
             next_page = request.args.get('next')
+            if next_page and not is_safe_url(next_page):
+                next_page = None
+
+            if next_page:
+                return redirect(next_page)
+
             if user.has_role('CHEF'):
-                return redirect(next_page or url_for('chef.dashboard_chef'))
-            return redirect(next_page or url_for('user.dashboard_user'))
+                return redirect(url_for('chef.dashboard_chef'))
+            return redirect(url_for('user.dashboard_user'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html', form=form)

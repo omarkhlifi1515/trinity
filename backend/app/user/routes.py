@@ -13,10 +13,22 @@ def roles_required(*required_roles):
     def wrapper(fn):
         @wraps(fn)
         def decorated_view(*args, **kwargs):
+            # If the user is not logged in, redirect them to login (with next)
             if not current_user.is_authenticated:
-                return abort(401)
+                return redirect(url_for('auth.login', next=request.path))
+
+            # If the user is logged in but does not have required roles,
+            # show a friendly message and redirect them to their dashboard
             if not all(current_user.has_role(role) for role in required_roles):
-                abort(403)
+                flash('You do not have permission to access that page.', 'warning')
+                # Prefer redirecting to the user's dashboard based on roles
+                if current_user.has_role('CHEF'):
+                    return redirect(url_for('chef.dashboard_chef'))
+                if current_user.has_role('USER'):
+                    return redirect(url_for('user.dashboard_user'))
+                # Fallback to login if no appropriate dashboard exists
+                return redirect(url_for('auth.login'))
+
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
