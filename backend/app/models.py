@@ -81,4 +81,17 @@ class Employee(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    # Make the user loader resilient: if the database is unavailable or
+    # an OperationalError occurs, return None so Flask-Login treats the
+    # visitor as anonymous instead of raising a 500 error.
+    try:
+        return db.session.get(User, int(user_id))
+    except Exception as e:
+        # Avoid importing app at module scope; use flask.current_app for logging
+        try:
+            from flask import current_app
+            current_app.logger.exception('Error loading user %s: %s', user_id, e)
+        except Exception:
+            # If logging also fails, silently ignore to avoid cascading errors
+            pass
+        return None
