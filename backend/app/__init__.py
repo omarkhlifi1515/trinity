@@ -21,14 +21,17 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
-    # Create upload folders if they don't exist
+    # Import models BEFORE creating tables
+    from app.models import User, Task, Presence, Role, Employee
+
+    # Create upload folders and initialize database
     with app.app_context():
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
         if not os.path.exists(app.config['SECURE_DOCUMENT_FOLDER']):
             os.makedirs(app.config['SECURE_DOCUMENT_FOLDER'])
         
-        # Initialize database tables
+        # Initialize database tables (models must be imported first)
         db.create_all()
 
     from app.auth.routes import auth as auth_blueprint
