@@ -34,6 +34,7 @@ def create_app(config_class=Config):
         # Initialize database tables (models must be imported first)
         db.create_all()
 
+    # Register Blueprints
     from app.auth.routes import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
@@ -42,6 +43,10 @@ def create_app(config_class=Config):
 
     from app.chef.routes import chef as chef_blueprint
     app.register_blueprint(chef_blueprint)
+
+    # --- NEW: Admin Blueprint Registration ---
+    from app.admin.routes import admin as admin_blueprint
+    app.register_blueprint(admin_blueprint)
 
     @app.route('/')
     def index():
@@ -60,8 +65,13 @@ def create_app(config_class=Config):
 
         # If a session _user_id exists, check the authenticated user and route
         if current_user.is_authenticated:
+            # --- NEW: Check for Admin Role ---
+            if current_user.has_role('ADMIN'):
+                return redirect(url_for('admin.dashboard_admin'))
+            
             if current_user.has_role('CHEF'):
                 return redirect(url_for('chef.dashboard_chef'))
+            
             return redirect(url_for('user.dashboard_user'))
 
         # Fallback: render login form

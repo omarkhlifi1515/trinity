@@ -40,7 +40,7 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user)
-            # Only honor next if it's a safe URL
+            
             next_page = request.args.get('next')
             if next_page and not is_safe_url(next_page):
                 next_page = None
@@ -48,8 +48,13 @@ def login():
             if next_page:
                 return redirect(next_page)
 
+            # --- NEW REDIRECT LOGIC ---
+            if user.has_role('ADMIN'):
+                return redirect(url_for('admin.dashboard_admin'))
             if user.has_role('CHEF'):
                 return redirect(url_for('chef.dashboard_chef'))
+            # --------------------------
+            
             return redirect(url_for('user.dashboard_user'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
