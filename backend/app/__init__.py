@@ -45,23 +45,27 @@ def create_app(config_class=Config):
 
     @app.route('/')
     def index():
-        # Check session first to avoid triggering the user_loader DB query
-        # for anonymous visitors (prevents DB calls when no user is logged in).
-        from flask import session as flask_session
+        # For anonymous visitors render the login page as the main page
+        # without triggering a DB lookup via the user_loader. If a
+        # session _user_id exists we fall through and let Flask-Login
+        # resolve the user and redirect to the appropriate dashboard.
+        from flask import session as flask_session, render_template
+        from app.forms import LoginForm
         from flask_login import current_user
 
-        # If there is no user id in session, send to login without a DB lookup
+        # If no user is stored in the session, show the login form
         if not flask_session.get('_user_id'):
-            return redirect(url_for('auth.login'))
+            form = LoginForm()
+            return render_template('login.html', form=form)
 
-        # If session indicates a user id, rely on current_user to route by role
+        # If a session _user_id exists, check the authenticated user and route
         if current_user.is_authenticated:
             if current_user.has_role('CHEF'):
                 return redirect(url_for('chef.dashboard_chef'))
             return redirect(url_for('user.dashboard_user'))
 
-        # Fallback to login
-        return redirect(url_for('auth.login'))
+        # Fallback: render login form
+        return render_template('login.html', form=LoginForm())
 
     @app.route('/health', methods=['GET'])
     def health():
