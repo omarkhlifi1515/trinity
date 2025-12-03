@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block title %}Employee Presence{% endblock %}
+{% block theme_class %}chef-theme{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <h4 class="mb-0 text-white"><i class="fa-solid fa-user-secret text-success-custom"></i> TrinitySim [Chef]</h4>
+</div>
+<nav class="nav flex-column">
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.dashboard_chef') }}"><i class="fa fa-tachometer-alt me-2"></i> Dashboard</a>
+    <hr class="text-white-50 mx-3">
+    <h6 class="text-white-50 ms-3 mb-2">Management</h6>
+    <a class="nav-link chef-dashboard-link active" href="{{ url_for('chef.employees') }}"><i class="fa fa-users me-2"></i> Employees</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.task_management') }}"><i class="fa fa-tasks me-2"></i> Task Management</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.access_control') }}"><i class="fa fa-key me-2"></i> Access Control</a>
+    <hr class="text-white-50 mx-3">
+    <h6 class="text-white-50 ms-3 mb-2">User View</h6>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks (View)</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.chat') }}"><i class="fa fa-comments me-2"></i> Chat (View)</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.documents') }}"><i class="fa fa-folder-open me-2"></i> Documents (View)</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h5 class="card-title mb-0"><i class="fa fa-users-viewfinder me-2"></i> Employee Presence</h5></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Status</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr>
+                        <td>{{ employee.username }}</td>
+                        <td>
+                            {% if employee.status == 'Present' %}
+                                <span class="badge bg-success">{{ employee.status }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ employee.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ employee.last_seen }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">No employees found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

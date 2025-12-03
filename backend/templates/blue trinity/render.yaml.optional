@@ -1,0 +1,25 @@
+services:
+  - type: worker
+    name: blue-trinity-agent
+    env: python
+    pythonVersion: 3.11
+    buildCommand: pip install -r requirements.txt
+    startCommand: python blue_trinity_agent.py run --interval 86400
+    envVars:
+      - key: DRIVE_PATH
+        value: "/mnt/shared/trinity"
+    internal: true
+
+# Note: This is OPTIONAL - only use if deploying Blue Trinity to Render
+# Otherwise, run locally on your machine with Windows Task Scheduler
+#
+# To use this:
+# 1. Copy requirements.txt from backend/ to blue trinity/
+# 2. Push to GitHub with this render.yaml in blue trinity/
+# 3. Create Render Worker Service (not Web Service)
+# 4. This will run the agent periodically (internal = not public)
+#
+# Recommended: Keep Blue Trinity local on your PC instead
+# - Direct access to Google Drive files
+# - No Render cost
+# - Easier debugging
