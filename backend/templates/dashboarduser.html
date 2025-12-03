@@ -9,6 +9,7 @@
 </div>
 <nav class="nav flex-column">
     <a class="nav-link user-dashboard-link active" href="{{ url_for('dashboard_user') }}"><i class="fa fa-home me-2"></i> Overview</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.profile') }}"><i class="fa fa-user me-2"></i> My Profile</a>
     <a class="nav-link user-dashboard-link" href="{{ url_for('tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks</a>
     <a class="nav-link user-dashboard-link" href="{{ url_for('chat') }}"><i class="fa fa-comments me-2"></i> Chat</a>
     <a class="nav-link user-dashboard-link" href="{{ url_for('documents') }}"><i class="fa fa-folder-open me-2"></i> Documents</a>
@@ -103,6 +104,9 @@
         <div class="card p-4 h-100">
             <h5 class="card-title mb-3"><i class="fa fa-chart-line me-2"></i> Quick Actions</h5>
             <div class="d-grid gap-2">
+                <a href="{{ url_for('user.profile') }}" class="btn btn-outline-primary">
+                    <i class="fa fa-user me-2"></i>My Profile
+                </a>
                 <a href="{{ url_for('tasks') }}" class="btn btn-outline-primary">
                     <i class="fa fa-tasks me-2"></i>View My Tasks
                 </a>

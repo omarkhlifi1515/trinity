@@ -3176,6 +3176,7 @@ id btnConnect
 id btnHistory
 id btnListTools
 id btnNmapScan
+id btnSaveSettings
 id btnSystemInfo
 id buttonLayout
 id buttonLayout2
@@ -3252,7 +3253,9 @@ id easeInOut
 id easeOut
 id east
 id edge
+id editPort
 id editTarget
+id editWorkstationIp
 id edit_query
 id edit_text_id
 id elastic
@@ -3699,6 +3702,7 @@ layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
 layout activity_main
+layout activity_settings
 layout custom_dialog
 layout design_bottom_navigation_item
 layout design_bottom_sheet_dialog

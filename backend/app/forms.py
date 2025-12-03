@@ -40,3 +40,12 @@ class AccessControlForm(FlaskForm):
     employee = SelectField('Employee', validators=[DataRequired()])
     department = SelectField('Department', choices=["General", "Engineering", "Analytics", "Security", "HR"], validators=[DataRequired()])
     submit = SubmitField('Update Access')
+
+class EmployeeForm(FlaskForm):
+    """Form for adding/editing employees in HR Portal"""
+    name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=100)])
+    role = SelectField('Role', choices=[('Employee', 'Employee'), ('Chef', 'Chef')], validators=[DataRequired()])
+    status = SelectField('Status', choices=[('Active', 'Active'), ('Absent', 'Absent')], validators=[DataRequired()])
+    contact_info = StringField('Contact Info', validators=[Length(max=200)], 
+                              render_kw={'placeholder': 'Email, phone, etc.'})
+    submit = SubmitField('Save Employee')

@@ -27,6 +27,9 @@ def create_app(config_class=Config):
             os.makedirs(app.config['UPLOAD_FOLDER'])
         if not os.path.exists(app.config['SECURE_DOCUMENT_FOLDER']):
             os.makedirs(app.config['SECURE_DOCUMENT_FOLDER'])
+        
+        # Initialize database tables
+        db.create_all()
 
     from app.auth.routes import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')

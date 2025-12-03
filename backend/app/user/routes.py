@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, abort, send_from_di
 from flask_login import login_required, current_user
 from app import db
 from app.user import user
-from app.models import Task, Message, Document, Presence
+from app.models import Task, Message, Document, Presence, Employee
 from app.forms import PresenceForm, TaskProofForm, ChatMessageForm
 from werkzeug.utils import secure_filename
 import os
@@ -115,3 +115,25 @@ def download(filename):
         secure_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'secure_documents')
         return send_from_directory(secure_folder, filename, as_attachment=True)
     abort(403)
+
+@user.route('/profile')
+@login_required
+@roles_required('USER')
+def profile():
+    """View employee profile"""
+    # Try to find employee record linked to current user
+    employee = Employee.query.filter_by(user_id=current_user.id).first()
+    
+    # If no employee record exists, create a basic one
+    if not employee:
+        employee = Employee(
+            name=current_user.username,
+            role='Chef' if current_user.has_role('CHEF') else 'Employee',
+            status='Active',
+            contact_info=f'{current_user.username}@company.com',
+            user_id=current_user.id
+        )
+        db.session.add(employee)
+        db.session.commit()
+    
+    return render_template('profile.html', employee=employee)

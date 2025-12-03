@@ -50,6 +50,35 @@ class Presence(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+class Employee(db.Model):
+    """HR Portal Employee Model - Stored in Google Drive Database"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, index=True)
+    role = db.Column(db.String(20), nullable=False, default='Employee')  # Chef or Employee
+    status = db.Column(db.String(20), nullable=False, default='Active')  # Active or Absent
+    contact_info = db.Column(db.String(200))  # Email, phone, etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Link to User account if exists
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User', backref=db.backref('employee_profile', uselist=False))
+    
+    def __repr__(self):
+        return f'<Employee {self.name} - {self.role}>'
+    
+    def to_dict(self):
+        """Convert employee to dictionary for JSON responses"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'role': self.role,
+            'status': self.status,
+            'contact_info': self.contact_info,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))

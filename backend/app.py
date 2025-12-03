@@ -344,9 +344,5 @@ def access_control():
 
     return render_template('access-control.html', form=form, users=all_users)
 
-# Ensure app is accessible for Gunicorn
-# The Flask app instance is defined at the top level (line 14) as: app = Flask(__name__)
-# This makes it accessible when imported by Gunicorn: gunicorn app:app
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
