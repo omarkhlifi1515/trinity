@@ -21,7 +21,7 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
-    # Import models
+    # Import models BEFORE creating tables
     from app.models import User, Task, Presence, Role, Employee
 
     # Create upload folders and initialize database
@@ -34,9 +34,8 @@ def create_app(config_class=Config):
         # Initialize database tables
         db.create_all()
         
-        # --- FIX: Auto-create Roles and Admin User ---
+        # Ensure Roles and Admin exist (Fix for Render deployments)
         create_initial_data(db, bcrypt)
-        # ---------------------------------------------
 
     # Register Blueprints
     from app.auth.routes import auth as auth_blueprint
@@ -57,10 +56,12 @@ def create_app(config_class=Config):
         from app.forms import LoginForm
         from flask_login import current_user
 
+        # If not logged in, show login form
         if not flask_session.get('_user_id'):
             form = LoginForm()
             return render_template('login.html', form=form)
 
+        # If logged in, redirect based on role
         if current_user.is_authenticated:
             if current_user.has_role('ADMIN'):
                 return redirect(url_for('admin.dashboard_admin'))
@@ -101,23 +102,19 @@ def create_app(config_class=Config):
 
     return app
 
-# --- Helper Function to Create Initial Data ---
 def create_initial_data(db, bcrypt):
     from app.models import Role, User
     try:
-        # 1. Create Roles
         roles = ['ADMIN', 'CHEF', 'USER']
         for role_name in roles:
             role = Role.query.filter_by(name=role_name).first()
             if not role:
                 role = Role(name=role_name)
                 db.session.add(role)
-        
         db.session.commit()
 
-        # 2. Create Admin User (if missing)
-        admin_role = Role.query.filter_by(name='ADMIN').first()
         admin_user = User.query.filter_by(username='admin').first()
+        admin_role = Role.query.filter_by(name='ADMIN').first()
         
         if not admin_user:
             hashed_pw = bcrypt.generate_password_hash('admin').decode('utf-8')
@@ -125,8 +122,6 @@ def create_initial_data(db, bcrypt):
             admin_user.roles.append(admin_role)
             db.session.add(admin_user)
             db.session.commit()
-            print(">>> Auto-created 'admin' user with password 'admin'")
-            
     except Exception as e:
-        print(f">>> Error creating initial data: {e}")
+        print(f"Initial data setup error: {e}")
         db.session.rollback()

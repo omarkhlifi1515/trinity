@@ -22,9 +22,12 @@ def register():
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user = User(username=form.username.data, password=hashed_password)
+        
+        # Default role for new users
         user_role = Role.query.filter_by(name='USER').first()
         if user_role:
             user.roles.append(user_role)
+            
         db.session.add(user)
         db.session.commit()
         flash('Your account has been created!', 'success')
@@ -34,7 +37,13 @@ def register():
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        # Redirect if already logged in
+        if current_user.has_role('ADMIN'):
+            return redirect(url_for('admin.dashboard_admin'))
+        if current_user.has_role('CHEF'):
+            return redirect(url_for('chef.dashboard_chef'))
         return redirect(url_for('user.dashboard_user'))
+
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -48,12 +57,12 @@ def login():
             if next_page:
                 return redirect(next_page)
 
-            # --- NEW REDIRECT LOGIC ---
+            # --- Redirect based on Role ---
             if user.has_role('ADMIN'):
                 return redirect(url_for('admin.dashboard_admin'))
             if user.has_role('CHEF'):
                 return redirect(url_for('chef.dashboard_chef'))
-            # --------------------------
+            # ------------------------------
             
             return redirect(url_for('user.dashboard_user'))
         else:
