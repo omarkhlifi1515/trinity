@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, jsonify
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -39,6 +39,10 @@ def create_app(config_class=Config):
 
     from app.chef.routes import chef as chef_blueprint
     app.register_blueprint(chef_blueprint)
+    
+    # Register admin/database management blueprint
+    from app.chef import admin_bp
+    app.register_blueprint(admin_bp)
 
     @app.route('/')
     def index():
@@ -49,6 +53,16 @@ def create_app(config_class=Config):
                 return redirect(url_for('chef.dashboard_chef'))
             return redirect(url_for('user.dashboard_user'))
         return redirect(url_for('auth.login'))
+
+    @app.route('/health', methods=['GET'])
+    def health():
+        """Health check endpoint for monitoring (Render, K8s, etc.)"""
+        try:
+            # Quick DB check
+            db.session.execute(db.text('SELECT 1'))
+            return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+        except Exception as e:
+            return jsonify({'status': 'unhealthy', 'error': str(e)}), 503
 
     # Error Handlers
     @app.errorhandler(404)
