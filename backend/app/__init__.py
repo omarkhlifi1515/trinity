@@ -39,10 +39,6 @@ def create_app(config_class=Config):
 
     from app.chef.routes import chef as chef_blueprint
     app.register_blueprint(chef_blueprint)
-    
-    # Register admin/database management blueprint
-    from app.chef import admin_bp
-    app.register_blueprint(admin_bp)
 
     @app.route('/')
     def index():
