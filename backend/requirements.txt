@@ -8,4 +8,4 @@ Werkzeug>=2.3.7
 python-dotenv>=1.0.0
 SQLAlchemy>=2.0.20
 psycopg2-binary>=2.9.6
-gunicorn
+gunicorn>=21.2.0
