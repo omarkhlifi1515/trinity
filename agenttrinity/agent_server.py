@@ -2,12 +2,29 @@ from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+from functools import wraps
 
 load_dotenv()
 
 from db import init_db, get_session, Task, Message, User
 
 app = Flask(__name__)
+
+# Load API key from environment (required for security)
+API_KEY = os.environ.get('AGENT_API_KEY')
+if not API_KEY:
+    raise ValueError('AGENT_API_KEY environment variable is required for security.')
+
+
+def require_api_key(f):
+    """Decorator to check API key in request headers."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        key = request.headers.get('X-API-Key')
+        if key != API_KEY:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.before_first_request
@@ -22,6 +39,7 @@ def health():
 
 
 @app.route('/create_task', methods=['POST'])
+@require_api_key
 def create_task():
     data = request.get_json() or {}
     title = data.get('title')
@@ -68,6 +86,7 @@ def create_task():
 
 
 @app.route('/send_notification', methods=['POST'])
+@require_api_key
 def send_notification():
     data = request.get_json() or {}
     user_id = data.get('user_id')
@@ -89,6 +108,7 @@ def send_notification():
 
 
 @app.route('/update_status', methods=['POST'])
+@require_api_key
 def update_status():
     data = request.get_json() or {}
     entity = (data.get('entity') or '').lower()

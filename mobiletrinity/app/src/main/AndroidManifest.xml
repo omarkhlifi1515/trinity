@@ -1,12 +1,23 @@
 <manifest package="com.example.mobiletrinity" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Network permissions for Retrofit API calls -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:label="MobileTrinity"
-        android:icon="@mipmap/ic_launcher">
-        <activity android:name=".MainActivity">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="false">
+
+        <activity 
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
+
 </manifest>

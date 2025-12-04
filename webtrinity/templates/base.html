@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Trinity Workplace OS{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --trinity-dark: #0f172a;
+            --trinity-slate: #1e293b;
+            --trinity-neon-blue: #38bdf8;
+            --trinity-neon-purple: #a78bfa;
+            --trinity-accent-green: #10b981;
+        }
+
+        * {
+            @apply transition-colors duration-300;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--trinity-dark) 0%, #1a1f3a 100%);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            @apply rounded-lg;
+        }
+
+        /* Neon Text Shadow */
+        .neon-text-blue {
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.6), 0 0 30px rgba(56, 189, 248, 0.3);
+        }
+
+        .neon-text-purple {
+            text-shadow: 0 0 15px rgba(167, 139, 250, 0.6), 0 0 30px rgba(167, 139, 250, 0.3);
+        }
+
+        /* Hover Glow Effect */
+        .glow-hover {
+            @apply hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-300;
+        }
+
+        /* Button Styles */
+        .btn-trinity {
+            @apply px-4 py-2 rounded-lg font-semibold transition-all duration-300;
+            background: linear-gradient(135deg, var(--trinity-neon-blue) 0%, var(--trinity-neon-purple) 100%);
+            color: white;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+        }
+
+        .btn-trinity:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.8);
+        }
+
+        .btn-secondary {
+            @apply px-4 py-2 rounded-lg font-semibold border border-cyan-500/50 text-cyan-400;
+        }
+
+        .btn-secondary:hover {
+            @apply bg-cyan-500/10;
+        }
+
+        /* Card Hover Animation */
+        .card-trinity {
+            @apply glass-panel p-6 glow-hover;
+        }
+
+        /* Status Badges */
+        .badge-done {
+            @apply bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm;
+        }
+
+        .badge-in-progress {
+            @apply bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm;
+        }
+
+        .badge-todo {
+            @apply bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-sm;
+        }
+
+        /* Navbar */
+        .navbar-trinity {
+            @apply glass-panel border-b border-cyan-500/20;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    {% if current_user.is_authenticated %}
+    <nav class="navbar-trinity">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl font-bold neon-text-blue">⚛️ Trinity</span>
+                <span class="text-sm text-gray-400">Workplace OS</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="{{ url_for('dashboard') }}" class="hover:text-cyan-400 text-gray-300">Dashboard</a>
+                <a href="#" class="hover:text-cyan-400 text-gray-300">Tasks</a>
+                <a href="#" class="hover:text-cyan-400 text-gray-300">Team</a>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm">{{ current_user.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="btn-secondary text-sm">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 py-6 border-t border-cyan-500/20 text-center text-gray-500">
+        <p>&copy; 2025 Trinity OS. See <a href="/TRINITY_IDENTITY.md" class="text-cyan-400 hover:text-cyan-300">TRINITY_IDENTITY.md</a> for details.</p>
+    </footer>
+</body>
+</html>
