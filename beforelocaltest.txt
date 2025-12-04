@@ -1,5 +1,0 @@
-cd ".\trinity"
-cd "green trinity local"
-.\.venv\Scripts\Activate.ps1
-
-$env:POSTGRES_SYNC_URL = "postgresql://trinity_5mxn_user:6q8XxiTlIiEN7NS9ehPiOGENlWeU4Pqr@dpg-d4o6t22dbo4c73ab07t0-a.oregon-postgres.render.com/trinity_5mxn"
