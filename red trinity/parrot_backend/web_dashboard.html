@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Trinity - Attack Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #0a0a0f;
+            color: #00ffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 48px;
+            font-weight: 900;
+            color: #ff0080;
+            text-shadow: 0 0 20px rgba(255, 0, 128, 0.5);
+            letter-spacing: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #00ffff;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            border-color: #00ffff;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #00ffff;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .panel {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 25px;
+        }
+        
+        .panel-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 24px;
+            color: #00ffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+        }
+        
+        .category {
+            margin-bottom: 25px;
+        }
+        
+        .category-name {
+            font-size: 18px;
+            color: #ff0080;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .attack-item {
+            background: rgba(0, 255, 255, 0.03);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .attack-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+            border-color: #00ffff;
+            transform: translateX(5px);
+        }
+        
+        .attack-name {
+            font-weight: 700;
+            color: #00ffff;
+            margin-bottom: 5px;
+        }
+        
+        .attack-desc {
+            font-size: 14px;
+            color: #888;
+        }
+        
+        .attack-form {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        
+        .attack-form.active {
+            display: block;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 4px;
+            color: #00ffff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #ff0080, #ff4081);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 128, 0.5);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00ff80;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .result-success {
+            color: #00ff80;
+        }
+        
+        .result-error {
+            color: #ff0080;
+        }
+        
+        .recent-attacks {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .recent-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            font-size: 14px;
+        }
+        
+        .recent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .success-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(0, 255, 128, 0.2);
+            border: 1px solid #00ff80;
+            border-radius: 4px;
+            color: #00ff80;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        
+        .fail-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(255, 0, 128, 0.2);
+            border: 1px solid #ff0080;
+            border-radius: 4px;
+            color: #ff0080;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 255, 255, 0.3);
+            border-top-color: #00ffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RED TRINITY</h1>
+            <div class="subtitle">Windows Attack Platform | Web Dashboard</div>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Attacks</div>
+                <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Successful</div>
+                <div class="stat-value" id="stat-success">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Failed</div>
+                <div class="stat-value" id="stat-failed">0</div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="panel">
+                <div class="panel-title">AVAILABLE ATTACKS</div>
+                <div id="attacks-list">
+                    <div style="color: #888; text-align: center; padding: 20px;">Loading attacks...</div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-title">EXECUTION RESULTS</div>
+                <div id="results" class="results">No attacks executed yet. Select an attack to begin.</div>
+            </div>
+        </div>
+        
+        <div class="panel" style="margin-top: 30px;">
+            <div class="panel-title">RECENT ATTACKS</div>
+            <div id="recent-attacks" class="recent-attacks">
+                <div style="color: #888; text-align: center; padding: 20px;">No recent attacks</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let attacksData = {};
+        let currentExecuting = null;
+        
+        // Load attacks list
+        async function loadAttacks() {
+            try {
+                const response = await fetch('/api/attacks/list', {
+                    headers: {
+                        'Authorization': 'Bearer red-trinity-secret-key-change-in-production'
+                    }
+                });
+                const data = await response.json();
+                attacksData = data.attacks;
+                renderAttacks();
+                loadStats();
+                loadRecentAttacks();
+            } catch (error) {
+                document.getElementById('attacks-list').innerHTML = 
+                    '<div style="color: #ff0080;">Error loading attacks: ' + error.message + '</div>';
+            }
+        }
+        
+        // Render attacks list
+        function renderAttacks() {
+            const container = document.getElementById('attacks-list');
+            let html = '';
+            
+            for (const [category, attacks] of Object.entries(attacksData)) {
+                html += `<div class="category">
+                    <div class="category-name">${category.replace('_', ' ').toUpperCase()}</div>`;
+                
+                attacks.forEach(attack => {
+                    const needsTarget = attack.id !== 'registry_scan';
+                    html += `
+                        <div class="attack-item" onclick="toggleAttackForm('${attack.id}', '${category}', ${needsTarget})">
+                            <div class="attack-name">${attack.name}</div>
+                            <div class="attack-desc">${attack.description}</div>
+                            <div class="attack-form" id="form-${attack.id}">
+                                <input type="text" id="target-${attack.id}" placeholder="${needsTarget ? 'Enter target (e.g., 127.0.0.1)' : 'No target needed'}" ${needsTarget ? '' : 'disabled'}>
+                                <button onclick="executeAttack('${attack.id}', '${category}')">Execute Attack</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Toggle attack form
+        function toggleAttackForm(attackId, category, needsTarget) {
+            // Close all other forms
+            document.querySelectorAll('.attack-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            
+            // Toggle current form
+            const form = document.getElementById('form-' + attackId);
+            form.classList.toggle('active');
+        }
+        
+        // Execute attack
+        async function executeAttack(attackId, category) {
+            if (currentExecuting) {
+                alert('An attack is already executing. Please wait...');
+                return;
+            }
+            
+            const targetInput = document.getElementById('target-' + attackId);
+            const target = targetInput ? targetInput.value.trim() : '';
+            
+            if (attackId !== 'registry_scan' && !target) {
+                alert('Please enter a target');
+                return;
+            }
+            
+            currentExecuting = attackId;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Executing attack...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('attack_id', attackId);
+                formData.append('category', category);
+                formData.append('target', target);
+                
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                let output = '';
+                if (result.success) {
+                    output = `<div class="result-success">✓ Attack executed successfully!</div>`;
+                    if (result.output) {
+                        output += `<div style="margin-top: 10px; color: #00ff80;">${escapeHtml(result.output)}</div>`;
+                    }
+                } else {
+                    output = `<div class="result-error">✗ Attack failed: ${escapeHtml(result.error || 'Unknown error')}</div>`;
+                    if (result.error) {
+                        output += `<div style="margin-top: 10px; color: #ff0080;">${escapeHtml(result.error)}</div>`;
+                    }
+                }
+                
+                output += `<div style="margin-top: 15px; font-size: 11px; color: #888;">Command: ${escapeHtml(result.command || 'N/A')}</div>`;
+                resultsDiv.innerHTML = output;
+                
+                // Refresh stats and recent attacks
+                loadStats();
+                loadRecentAttacks();
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-error">Error: ${escapeHtml(error.message)}</div>`;
+            } finally {
+                currentExecuting = null;
+            }
+        }
+        
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: {
+                        'Authorization': 'Bearer red-trinity-secret-key-change-in-production'
+                    }
+                });
+                const stats = await response.json();
+                
+                document.getElementById('stat-total').textContent = stats.total_attacks || 0;
+                document.getElementById('stat-success').textContent = stats.successful || 0;
+                document.getElementById('stat-failed').textContent = stats.failed || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // Load recent attacks
+        async function loadRecentAttacks() {
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: {
+                        'Authorization': 'Bearer red-trinity-secret-key-change-in-production'
+                    }
+                });
+                const stats = await response.json();
+                const recent = stats.recent_attacks || [];
+                
+                const container = document.getElementById('recent-attacks');
+                if (recent.length === 0) {
+                    container.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No recent attacks</div>';
+                    return;
+                }
+                
+                let html = '';
+                recent.slice().reverse().forEach(attack => {
+                    const time = new Date(attack.timestamp).toLocaleString();
+                    const badge = attack.success 
+                        ? '<span class="success-badge">SUCCESS</span>' 
+                        : '<span class="fail-badge">FAILED</span>';
+                    html += `
+                        <div class="recent-item">
+                            <strong>${escapeHtml(attack.attack_name)}</strong> ${badge}
+                            <div style="color: #888; font-size: 12px; margin-top: 5px;">
+                                ${time} | Target: ${escapeHtml(attack.target || 'N/A')} | Category: ${escapeHtml(attack.category)}
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent attacks:', error);
+            }
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Auto-refresh stats every 5 seconds
+        setInterval(() => {
+            loadStats();
+            loadRecentAttacks();
+        }, 5000);
+        
+        // Initial load
+        loadAttacks();
+    </script>
+</body>
+</html>
+

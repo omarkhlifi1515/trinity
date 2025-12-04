@@ -1,0 +1,52 @@
+{
+    "tester": {
+        "password": "$2b$12$79OE5nWUgNNo9BiJnNtrSuA2PfZW.RFGyuFF60DufWvF6zmIMyAI6",
+        "roles": [
+            "USER"
+        ],
+        "department": "Security"
+    },
+    "chef": {
+        "password": "$2b$12$Q6diPvBOUqC9xB/0SBcIZO.LqD/RWizkEAu6F0yEUDAMjw9p7M7AW",
+        "roles": [
+            "CHEF",
+            "USER"
+        ],
+        "department": "Management"
+    },
+    "Tester": {
+        "password": "$2b$12$Y9IzCYMGDAuxcAkRanKHVOVEireILvN36l72hbSRzBl9Vu/1IRqNy",
+        "roles": [
+            "USER"
+        ],
+        "department": "General"
+    },
+    "tayechi": {
+        "password": "$2b$12$HMswaZTQHqiafVJYG/G5f.tRt1hL/DHpSr3Iqc00pYO9V74C/5kAy",
+        "roles": [
+            "USER"
+        ],
+        "department": "General"
+    },
+    "Omar": {
+        "password": "$2b$12$XL2cRcHQ2BFE2n1AqdVM5ujZCDzz4XwyqFj7FXMkmHZDyjLybOJw6",
+        "roles": [
+            "USER"
+        ],
+        "department": "General"
+    },
+    "Mariem": {
+        "password": "$2b$12$zn2dIQDNDIvApto3qPJNVOo.VWNvBIH7waMo6.F/a28lIO2pseT/W",
+        "roles": [
+            "USER"
+        ],
+        "department": "General"
+    },
+    "moula el bash": {
+        "password": "$2b$12$ERrY3kgXYybxMgRpl8jiY.l3omDVkCe58ozdVC694tMJXl7mzZyxu",
+        "roles": [
+            "USER"
+        ],
+        "department": "General"
+    }
+}

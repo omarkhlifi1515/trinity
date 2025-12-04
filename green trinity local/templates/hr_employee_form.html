@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block theme_class %}chef-theme{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <h4 class="mb-0 text-white"><i class="fa-solid fa-user-secret text-success-custom"></i> TrinitySim [Chef]</h4>
+</div>
+<nav class="nav flex-column">
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.dashboard_chef') }}"><i class="fa fa-tachometer-alt me-2"></i> Dashboard</a>
+    <hr class="text-white-50 mx-3">
+    <h6 class="text-white-50 ms-3 mb-2">HR Portal</h6>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.hr_dashboard') }}"><i class="fa fa-chart-bar me-2"></i> HR Dashboard</a>
+    <a class="nav-link chef-dashboard-link active" href="{{ url_for('chef.hr_employees') }}"><i class="fa fa-users me-2"></i> Manage Employees</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fa fa-{{ 'user-plus' if not employee else 'edit' }} me-2"></i> {{ title }}</h5>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control", placeholder="Full Name") }}
+                        {% for error in form.name.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.role.label(class="form-label") }}
+                        {{ form.role(class="form-select") }}
+                        {% for error in form.role.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-select") }}
+                        {% for error in form.status.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.contact_info.label(class="form-label") }}
+                        {{ form.contact_info(class="form-control", placeholder="email@company.com or phone number") }}
+                        {% for error in form.contact_info.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-success-custom") }}
+                        <a href="{{ url_for('chef.hr_employees') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

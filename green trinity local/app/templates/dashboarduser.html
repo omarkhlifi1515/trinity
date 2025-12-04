@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+{% block theme_class %}user-theme{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <h4 class="mb-0 text-white"><i class="fa-solid fa-shield-halved text-primary"></i> TrinitySim</h4>
+</div>
+<nav class="nav flex-column">
+    <a class="nav-link user-dashboard-link active" href="{{ url_for('user.dashboard_user') }}"><i class="fa fa-home me-2"></i> Overview</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.chat') }}"><i class="fa fa-comments me-2"></i> Chat</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.documents') }}"><i class="fa fa-folder-open me-2"></i> Documents</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Welcome, <span class="text-primary">{{ current_user.username }}</span></h2>
+    <span class="badge bg-success p-2 d-flex align-items-center"><i class="fa fa-circle text-white me-2"></i> Online</span>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h5 class="card-title"><i class="fa fa-clock me-2"></i> Daily Presence</h5>
+            <p class="text-white-50 small">Mark your attendance for today.</p>
+            {% if is_present_today %}
+                <div class="text-center text-success p-4">
+                    <i class="fa fa-check-circle fa-3x"></i>
+                    <p class="mt-2 mb-0">You have been marked present for today.</p>
+                </div>
+            {% else %}
+                <form method="POST" action="" class="mt-auto">
+                    {{ form.hidden_tag() }}
+                    {{ form.submit(class="btn btn-outline-primary w-100") }}
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card p-5 text-center h-100 d-flex flex-column justify-content-center align-items-center">
+            <i class="fa fa-compass fa-3x text-primary mb-3"></i>
+            <h5 class="card-title">User Dashboard</h5>
+            <p class="text-white-50">Select an option from the sidebar to get started.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

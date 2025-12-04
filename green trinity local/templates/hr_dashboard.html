@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block title %}HR Portal Dashboard{% endblock %}
+{% block theme_class %}chef-theme{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <h4 class="mb-0 text-white"><i class="fa-solid fa-user-secret text-success-custom"></i> TrinitySim [Chef]</h4>
+</div>
+<nav class="nav flex-column">
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.dashboard_chef') }}"><i class="fa fa-tachometer-alt me-2"></i> Dashboard</a>
+    <hr class="text-white-50 mx-3">
+    <h6 class="text-white-50 ms-3 mb-2">HR Portal</h6>
+    <a class="nav-link chef-dashboard-link active" href="{{ url_for('chef.hr_dashboard') }}"><i class="fa fa-chart-bar me-2"></i> HR Dashboard</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.hr_employees') }}"><i class="fa fa-users me-2"></i> Manage Employees</a>
+    <hr class="text-white-50 mx-3">
+    <h6 class="text-white-50 ms-3 mb-2">Management</h6>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.employees') }}"><i class="fa fa-users me-2"></i> Employees</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.task_management') }}"><i class="fa fa-tasks me-2"></i> Task Management</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('chef.access_control') }}"><i class="fa fa-key me-2"></i> Access Control</a>
+    <hr class="text-white-50 mx-3">
+    <h6 class="text-white-50 ms-3 mb-2">User View</h6>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks (View)</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.chat') }}"><i class="fa fa-comments me-2"></i> Chat (View)</a>
+    <a class="nav-link chef-dashboard-link" href="{{ url_for('user.documents') }}"><i class="fa fa-folder-open me-2"></i> Documents (View)</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">HR Portal Dashboard</h2>
+        <p class="text-muted mb-0 small">Employee Management & Statistics</p>
+    </div>
+    <a href="{{ url_for('chef.hr_add_employee') }}" class="btn btn-success-custom">
+        <i class="fa fa-plus me-2"></i>Add Employee
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        <i class="fa fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' if category == 'info' else 'times-circle' }} me-2"></i>
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card p-3 h-100 text-center">
+            <div class="mb-2">
+                <i class="fa fa-users fa-2x text-primary"></i>
+            </div>
+            <h4 class="mb-1">{{ stats.total }}</h4>
+            <p class="text-muted small mb-0">Total Employees</p>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card p-3 h-100 text-center">
+            <div class="mb-2">
+                <i class="fa fa-check-circle fa-2x text-success"></i>
+            </div>
+            <h4 class="mb-1">{{ stats.active }}</h4>
+            <p class="text-muted small mb-0">Active</p>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card p-3 h-100 text-center">
+            <div class="mb-2">
+                <i class="fa fa-user-slash fa-2x text-warning"></i>
+            </div>
+            <h4 class="mb-1">{{ stats.absent }}</h4>
+            <p class="text-muted small mb-0">Absent</p>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card p-3 h-100 text-center">
+            <div class="mb-2">
+                <i class="fa fa-user-shield fa-2x text-info"></i>
+            </div>
+            <h4 class="mb-1">{{ stats.chefs }}</h4>
+            <p class="text-muted small mb-0">Chefs</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Employees -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fa fa-clock me-2"></i> Recent Employees</h5>
+                <a href="{{ url_for('chef.hr_employees') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_employees %}
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Contact</th>
+                                <th>Added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in recent_employees %}
+                            <tr>
+                                <td class="fw-medium">{{ emp.name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if emp.role == 'Chef' else 'primary' }}">
+                                        {{ emp.role }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if emp.status == 'Active' else 'warning' }}">
+                                        {{ emp.status }}
+                                    </span>
+                                </td>
+                                <td><small class="text-muted">{{ emp.contact_info or 'N/A' }}</small></td>
+                                <td><small class="text-muted">{{ emp.created_at.strftime('%Y-%m-%d') if emp.created_at else 'N/A' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fa fa-users fa-3x text-muted mb-3 opacity-50"></i>
+                    <p class="text-muted">No employees yet. Add your first employee!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fa fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('chef.hr_add_employee') }}" class="btn btn-success-custom">
+                        <i class="fa fa-user-plus me-2"></i>Add New Employee
+                    </a>
+                    <a href="{{ url_for('chef.hr_employees') }}" class="btn btn-outline-primary">
+                        <i class="fa fa-list me-2"></i>View All Employees
+                    </a>
+                    <a href="{{ url_for('chef.employees') }}" class="btn btn-outline-secondary">
+                        <i class="fa fa-eye me-2"></i>View Presence
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

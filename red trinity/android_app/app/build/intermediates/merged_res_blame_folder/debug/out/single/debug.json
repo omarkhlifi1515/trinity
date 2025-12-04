@@ -1,0 +1,54 @@
+[
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_activity_settings.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_item_attack_category.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\item_attack_category.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_fragment_dashboard.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\fragment_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\color_bottom_nav_selector.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\color\\bottom_nav_selector.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_fragment_settings.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\fragment_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_item_attack.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\item_attack.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\menu_bottom_navigation.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\menu\\bottom_navigation.xml"
+    },
+    {
+        "merged": "com.redtrinity.pentest.app-merged_res-38:/layout_fragment_dashboard.xml.flat",
+        "source": "com.redtrinity.pentest.app-main-40:/layout/fragment_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_item_recent_attack.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\item_recent_attack.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_activity_main_new.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\activity_main_new.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_dialog_execute_attack.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\dialog_execute_attack.xml"
+    },
+    {
+        "merged": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-merged_res-38:\\layout_fragment_attack_list.xml.flat",
+        "source": "C:\\Users\\msi\\.gradle\\daemon\\8.2\\com.redtrinity.pentest.app-main-40:\\layout\\fragment_attack_list.xml"
+    }
+]

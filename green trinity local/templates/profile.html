@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block theme_class %}user-theme{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar-header">
+    <h4 class="mb-0 text-white"><i class="fa-solid fa-shield-halved text-primary"></i> TrinitySim</h4>
+</div>
+<nav class="nav flex-column">
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.dashboard_user') }}"><i class="fa fa-home me-2"></i> Overview</a>
+    <a class="nav-link user-dashboard-link active" href="{{ url_for('user.profile') }}"><i class="fa fa-user me-2"></i> My Profile</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.tasks') }}"><i class="fa fa-tasks me-2"></i> My Tasks</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.chat') }}"><i class="fa fa-comments me-2"></i> Chat</a>
+    <a class="nav-link user-dashboard-link" href="{{ url_for('user.documents') }}"><i class="fa fa-folder-open me-2"></i> Documents</a>
+    <a class="nav-link text-danger mt-auto" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out me-2"></i> Logout</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fa fa-user me-2"></i> My Employee Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4 text-center">
+                        <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 2.5rem;">
+                            {{ employee.name[0]|upper }}
+                        </div>
+                        <h4 class="mb-1">{{ employee.name }}</h4>
+                        <span class="badge bg-{{ 'success' if employee.role == 'Chef' else 'primary' }} mb-2">
+                            {{ employee.role }}
+                        </span>
+                    </div>
+                    <div class="col-md-8">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 150px;">Employee ID:</td>
+                                <td class="fw-medium">#{{ employee.id }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Status:</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if employee.status == 'Active' else 'warning' }}">
+                                        {{ employee.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Contact Info:</td>
+                                <td>{{ employee.contact_info or 'Not provided' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Created:</td>
+                                <td>{{ employee.created_at.strftime('%Y-%m-%d') if employee.created_at else 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Last Updated:</td>
+                                <td>{{ employee.updated_at.strftime('%Y-%m-%d') if employee.updated_at else 'N/A' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
