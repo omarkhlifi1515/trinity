@@ -1,11 +1,14 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, jsonify, request, render_template, redirect, url_for, flash
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
 
 # Custom imports
-from extensions import db
+from extensions import db, login_manager, socketio
 from models import User, Department, Task, Message
 
 load_dotenv()
@@ -18,15 +21,15 @@ if DEFAULT_DATABASE_URL.startswith("postgres://"):
     DEFAULT_DATABASE_URL = DEFAULT_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DEFAULT_DATABASE_URL
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'trinity-super-secret')
 
 # --- INIT EXTENSIONS ---
 db.init_app(app)
-
-login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -35,6 +38,13 @@ def load_user(user_id):
 # --- AUTO CREATE TABLES ---
 with app.app_context():
     db.create_all()
+
+# Import socket event handlers to register them
+try:
+    import socket_events
+except Exception:
+    # If events fail to import, continue — errors will show in logs
+    pass
 
 # --- AUTH ROUTES ---
 
@@ -170,4 +180,5 @@ def help_page():
     return render_template('dashboard.html', page="Documentation")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    # Run using SocketIO server (eventlet)
+    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
