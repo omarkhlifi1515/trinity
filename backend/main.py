@@ -1,44 +1,23 @@
+
 import os
 import logging
-from fastapi import FastAPI, HTTPException
+from typing import List, Dict, Any
+
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import google.generativeai as genai
 
-from models import ChatRequest, StatsResponse
 from database import get_client_singleton
-from crud import (
-    list_rows,
-    get_row,
-    insert_row,
-    update_row,
-    delete_row,
-    count_rows,
-)
-from models import (
-    ProfileModel,
-    SectorModel,
-    GradeModel,
-    ChatLogModel,
-    AIAnalysisModel,
-)
-from redis import Redis
-from rq import Queue
-from fastapi import Depends
+from crud import list_rows, get_row, insert_row, update_row, delete_row, count_rows
+from models import Sector, Tool, Profile, Message, UserUpdate, StatsResponse
 from auth import get_current_user, require_admin
-
-# Redis / RQ setup - used to enqueue analysis jobs handled by `worker.process_analysis`.
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
-redis_conn = Redis.from_url(REDIS_URL)
-queue = Queue("default", connection=redis_conn)
 
 load_dotenv()
 
 APP_ORIGINS = ["*"]
 
-app = FastAPI(title="Trinity Backend")
+app = FastAPI(title="Trinity Backend - Enterprise Hub")
 
-# Basic CORS setup - in production restrict this to known origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=APP_ORIGINS,
@@ -47,324 +26,147 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure Google Generative AI (Gemini)
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-1.5-flash")
-
-if not GOOGLE_API_KEY:
-    logging.warning("GOOGLE_API_KEY not set; AI endpoints will fail until configured.")
-else:
-    try:
-        genai.configure(api_key=GOOGLE_API_KEY)
-    except Exception:
-        logging.exception("Failed to configure google-generativeai client")
-
-def _extract_genai_text(resp) -> str:
-    """Attempt to extract text from various google-generativeai response shapes."""
-    try:
-        # dict-like responses
-        if isinstance(resp, dict):
-            # common shapes
-            if "candidates" in resp and resp["candidates"]:
-                cand = resp["candidates"][0]
-                for k in ("content", "output", "text"):
-                    if k in cand:
-                        return cand[k]
-            for k in ("output", "content", "text"):
-                if k in resp:
-                    return resp[k]
-
-        # object-like responses
-        candidates = getattr(resp, "candidates", None)
-        if candidates:
-            cand0 = candidates[0]
-            for attr in ("content", "output", "text"):
-                if hasattr(cand0, attr):
-                    return getattr(cand0, attr)
-
-    except Exception:
-        logging.debug("Failed to extract text from genai response", exc_info=True)
-
-    # Fallback to string representation
-    return str(resp)
-
 # Supabase client (singleton)
 supabase = get_client_singleton()
 
 
-@app.post("/chat")
-async def chat_endpoint(req: ChatRequest):
-    """Accept a user message, generate an AI response, and persist both messages.
-
-    Flow:
-    1. Build a system prompt to set Trinity AI behavior.
-    2. Call OpenAI's ChatCompletion API.
-    3. Insert both user message and AI response into `chat_logs` table in Supabase.
-    4. Return the AI reply to the client.
-    """
-    if not req.message:
-        raise HTTPException(status_code=400, detail="Message is required")
-
-    system_prompt = (
-        "You are Trinity AI, a concise and professional assistant that helps employees with company operations. "
-        "Answer clearly and provide actionable steps when appropriate."
-    )
-
-    try:
-        # Use Google Generative AI (Gemini) to generate a short response.
-        prompt = system_prompt + "\n\nUser: " + req.message
-
-        # Use the google-generativeai SDK (Gemini) via GenerativeModel.generate_content
-        try:
-            model = genai.GenerativeModel(GOOGLE_MODEL)
-            full_prompt = prompt
-            response = model.generate_content(full_prompt)
-            ai_text = getattr(response, "text", None)
-            if not ai_text:
-                ai_text = _extract_genai_text(response)
-            ai_text = ai_text.strip()
-        except Exception as e:
-            logging.exception("Gemini generation failed")
-            raise HTTPException(status_code=500, detail=f"AI generation failed: {e}")
-
-    except Exception as e:
-        logging.exception("Gemini generation failed")
-        raise HTTPException(status_code=500, detail=f"AI generation failed: {e}")
-
-    # Persist both user and assistant messages into Supabase `chat_logs` table.
-    # The table is expected to have columns: user_id, message, role, created_at (optional).
-    try:
-        entries = [
-            {"user_id": req.user_id, "message": req.message, "role": "user"},
-            {"user_id": req.user_id, "message": ai_text, "role": "assistant"},
-        ]
-
-        # Attempt to insert rows. Compatibility note: supabase client libs differ on method names.
-        # Using .table(...).insert(...).execute() pattern which is supported by supabase-py.
-        insert_res = supabase.table(os.getenv("CHAT_LOGS_TABLE", "chat_logs")).insert(entries).execute()
-        logging.debug("Inserted chat logs: %s", insert_res)
-    except Exception:
-        # Log insertion failure but still return a successful AI response to the caller.
-        logging.exception("Failed to insert chat logs into Supabase")
-
-    return {"reply": ai_text}
-
+def _extract_user_id(user_obj: Dict[str, Any]) -> str:
+    """Robustly extract a user id from Supabase user object shapes."""
+    if not user_obj:
+        return ""
+    if isinstance(user_obj, dict):
+        # possible shapes: {'id': '...'}, or {'user': {...}}, or {'data': {...}}
+        if user_obj.get('id'):
+            return str(user_obj.get('id'))
+        if user_obj.get('user') and isinstance(user_obj.get('user'), dict):
+            return str(user_obj.get('user').get('id') or user_obj.get('user').get('sub') or '')
+        if user_obj.get('data') and isinstance(user_obj.get('data'), dict):
+            return str(user_obj.get('data').get('id') or user_obj.get('data').get('user', {}).get('id') or '')
+        # fallback to sub
+        return str(user_obj.get('sub') or '')
+    return ""
 
 
 @app.get("/")
 async def root():
-    """Root health endpoint to satisfy Render and other hosting health checks."""
-    return {"status": "online", "message": "Trinity Backend is running"}
+    return {"status": "online"}
 
 
-@app.post('/ai/analyze')
-async def enqueue_analysis(payload: dict, current_user: dict = Depends(get_current_user)):
-    """Enqueue an AI analysis job for background processing. Returns the job id.
+@app.get("/toolbox/my-tools")
+async def my_tools(current_user: dict = Depends(get_current_user)):
+    """Return tools assigned to the current user's sector."""
+    user_id = _extract_user_id(current_user)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user")
 
-    Expected payload keys: `text` (required), optional `user_id`, `meta`.
-    """
-    text = payload.get('text') if isinstance(payload, dict) else None
-    if not text:
-        raise HTTPException(status_code=400, detail='text is required')
-
-    job = queue.enqueue('worker.process_analysis', payload)
-    return {"job_id": job.get_id()}
-
-
-@app.get("/dashboard/stats", response_model=StatsResponse)
-async def dashboard_stats():
-    """Return basic dashboard statistics, currently total employees (profiles count).
-
-    Uses Supabase `profiles` table to compute a simple count. Some Supabase clients
-    return count in different shapes; this function attempts to be robust.
-    """
-    table_name = os.getenv("PROFILES_TABLE", "profiles")
     try:
-        # Request an exact count from Supabase. The returned object varies by client.
-        res = supabase.table(table_name).select("id", count="exact").execute()
+        # Attempt to find profile by user_id in profiles table
+        tbl = os.getenv("PROFILES_TABLE", "profiles")
+        res = supabase.table(tbl).select("*").eq("user_id", user_id).single().execute()
+        profile = getattr(res, 'data', None) or (res.get('data') if isinstance(res, dict) else None)
+        if not profile:
+            return {"data": []}
+        sector_id = profile.get('sector_id')
+        if not sector_id:
+            return {"data": []}
 
-        total = None
-        # Try to read a `.count` attribute (object response)
-        if hasattr(res, "count") and res.count is not None:
-            total = int(res.count)
-        else:
-            # Fallbacks for dict-like responses
-            if isinstance(res, dict):
-                total = int(res.get("count") or len(res.get("data", [])))
-            else:
-                data = getattr(res, "data", None)
-                total = len(data) if data is not None else 0
-
+        tools_tbl = os.getenv("TOOLS_TABLE", "tools")
+        tres = supabase.table(tools_tbl).select("*").eq("sector_id", sector_id).execute()
+        tools = getattr(tres, 'data', None) or (tres.get('data') if isinstance(tres, dict) else [])
+        return {"data": tools}
     except Exception:
-        logging.exception("Failed to query profiles count from Supabase")
-        total = 0
-
-    return StatsResponse(total_employees=total)
+        logging.exception("Failed to fetch tools for user")
+        raise HTTPException(status_code=500, detail="Failed to fetch tools")
 
 
-## Simple CRUD endpoints for `profiles` (example). Repeat patterns for other tables.
+# --- Messaging APIs ---
+@app.get('/messages/conversations')
+async def list_conversations(current_user: dict = Depends(get_current_user)):
+    user_id = _extract_user_id(current_user)
+    msgs = list_rows(os.getenv('MESSAGES_TABLE', 'messages'))
+    # find conversation partner ids
+    partners = {}
+    for m in msgs:
+        sid = str(m.get('sender_id'))
+        rid = str(m.get('receiver_id'))
+        if sid == user_id:
+            other = rid
+        elif rid == user_id:
+            other = sid
+        else:
+            continue
+        # keep last message
+        ts = m.get('created_at') or m.get('created') or m.get('id')
+        partners[other] = partners.get(other) or {}
+        partners[other]['last_message'] = m.get('content')
+        partners[other]['last_ts'] = ts
+
+    # convert to list
+    convs = [{"user_id": k, "last_message": v.get('last_message'), "last_ts": v.get('last_ts')} for k, v in partners.items()]
+    return {"data": convs}
 
 
-@app.get("/profiles")
-async def list_profiles(limit: int = 100):
-    table = os.getenv("PROFILES_TABLE", "profiles")
-    rows = list_rows(table, select='*', limit=limit)
+@app.get('/messages/{other_user_id}')
+async def get_conversation(other_user_id: str, current_user: dict = Depends(get_current_user)):
+    user_id = _extract_user_id(current_user)
+    msgs = list_rows(os.getenv('MESSAGES_TABLE', 'messages'))
+    conv = [m for m in msgs if (str(m.get('sender_id')) == user_id and str(m.get('receiver_id')) == str(other_user_id)) or (str(m.get('sender_id')) == str(other_user_id) and str(m.get('receiver_id')) == user_id)]
+    # sort by created_at if present
+    try:
+        conv = sorted(conv, key=lambda x: x.get('created_at') or x.get('id'))
+    except Exception:
+        pass
+    return {"data": conv}
+
+
+@app.post('/messages')
+async def send_message(payload: Dict[str, Any], current_user: dict = Depends(get_current_user)):
+    user_id = _extract_user_id(current_user)
+    receiver_id = payload.get('receiver_id')
+    content = payload.get('content')
+    if not receiver_id or not content:
+        raise HTTPException(status_code=400, detail='receiver_id and content are required')
+    row = {
+        'sender_id': user_id,
+        'receiver_id': str(receiver_id),
+        'content': content,
+    }
+    inserted = insert_row(os.getenv('MESSAGES_TABLE', 'messages'), row)
+    if not inserted:
+        raise HTTPException(status_code=500, detail='Failed to send message')
+    return {"data": inserted}
+
+
+# --- Admin APIs ---
+@app.get('/admin/users')
+async def admin_list_users(admin_user: dict = Depends(require_admin)):
+    rows = list_rows(os.getenv('PROFILES_TABLE', 'profiles'))
     return {"data": rows}
 
 
-@app.post("/profiles")
-async def create_profile(payload: dict, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("PROFILES_TABLE", "profiles")
-    created = insert_row(table, payload)
-    if created is None:
-        raise HTTPException(status_code=500, detail="Failed to create profile")
-    return {"data": created}
-
-
-@app.get("/profiles/{profile_id}")
-async def get_profile(profile_id: int):
-    table = os.getenv("PROFILES_TABLE", "profiles")
-    row = get_row(table, profile_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="Profile not found")
-    return {"data": row}
-
-
-@app.put("/profiles/{profile_id}")
-async def update_profile(profile_id: int, payload: dict, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("PROFILES_TABLE", "profiles")
-    updated = update_row(table, profile_id, payload)
+@app.put('/admin/users/{profile_id}')
+async def admin_update_user(profile_id: int, payload: UserUpdate, admin_user: dict = Depends(require_admin)):
+    table = os.getenv('PROFILES_TABLE', 'profiles')
+    data = payload.model_dump(exclude_none=True)
+    updated = update_row(table, profile_id, data)
     if updated is None:
-        raise HTTPException(status_code=500, detail="Failed to update profile")
+        raise HTTPException(status_code=500, detail='Failed to update user')
     return {"data": updated}
 
 
-@app.delete("/profiles/{profile_id}")
-async def delete_profile(profile_id: int, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("PROFILES_TABLE", "profiles")
-    ok = delete_row(table, profile_id)
-    if not ok:
-        raise HTTPException(status_code=500, detail="Failed to delete profile")
-    return {"deleted": True}
-
-
-### Sectors CRUD
-
-
-@app.get("/sectors")
-async def list_sectors(limit: int = 100):
-    table = os.getenv("SECTORS_TABLE", "sectors")
-    rows = list_rows(table, select='*', limit=limit)
-    return {"data": rows}
-
-
-@app.post("/sectors")
-async def create_sector(payload: SectorModel, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("SECTORS_TABLE", "sectors")
-    created = insert_row(table, payload.dict(exclude_unset=True))
-    if created is None:
-        raise HTTPException(status_code=500, detail="Failed to create sector")
+@app.post('/admin/sectors')
+async def admin_create_sector(payload: Dict[str, Any], admin_user: dict = Depends(require_admin)):
+    created = insert_row(os.getenv('SECTORS_TABLE', 'sectors'), payload)
+    if not created:
+        raise HTTPException(status_code=500, detail='Failed to create sector')
     return {"data": created}
 
 
-@app.put("/sectors/{sector_id}")
-async def update_sector(sector_id: int, payload: SectorModel, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("SECTORS_TABLE", "sectors")
-    updated = update_row(table, sector_id, payload.dict(exclude_unset=True))
-    if updated is None:
-        raise HTTPException(status_code=500, detail="Failed to update sector")
-    return {"data": updated}
-
-
-@app.get("/sectors/{sector_id}")
-async def get_sector(sector_id: int):
-    table = os.getenv("SECTORS_TABLE", "sectors")
-    row = get_row(table, sector_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="Sector not found")
-    return {"data": row}
-
-
-@app.delete("/sectors/{sector_id}")
-async def delete_sector(sector_id: int, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("SECTORS_TABLE", "sectors")
-    ok = delete_row(table, sector_id)
-    if not ok:
-        raise HTTPException(status_code=500, detail="Failed to delete sector")
-    return {"deleted": True}
-
-
-### Grades CRUD
-
-
-@app.get("/grades")
-async def list_grades(limit: int = 100):
-    table = os.getenv("GRADES_TABLE", "grades")
-    rows = list_rows(table, select='*', limit=limit)
-    return {"data": rows}
-
-
-@app.post("/grades")
-async def create_grade(payload: GradeModel, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("GRADES_TABLE", "grades")
-    created = insert_row(table, payload.dict(exclude_unset=True))
-    if created is None:
-        raise HTTPException(status_code=500, detail="Failed to create grade")
+@app.post('/admin/tools')
+async def admin_create_tool(payload: Dict[str, Any], admin_user: dict = Depends(require_admin)):
+    created = insert_row(os.getenv('TOOLS_TABLE', 'tools'), payload)
+    if not created:
+        raise HTTPException(status_code=500, detail='Failed to create tool')
     return {"data": created}
 
-
-@app.put("/grades/{grade_id}")
-async def update_grade(grade_id: int, payload: GradeModel, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("GRADES_TABLE", "grades")
-    updated = update_row(table, grade_id, payload.dict(exclude_unset=True))
-    if updated is None:
-        raise HTTPException(status_code=500, detail="Failed to update grade")
-    return {"data": updated}
-
-
-@app.get("/grades/{grade_id}")
-async def get_grade(grade_id: int):
-    table = os.getenv("GRADES_TABLE", "grades")
-    row = get_row(table, grade_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="Grade not found")
-    return {"data": row}
-
-
-@app.delete("/grades/{grade_id}")
-async def delete_grade(grade_id: int, current_user: dict = Depends(get_current_user), admin: dict = Depends(require_admin)):
-    table = os.getenv("GRADES_TABLE", "grades")
-    ok = delete_row(table, grade_id)
-    if not ok:
-        raise HTTPException(status_code=500, detail="Failed to delete grade")
-    return {"deleted": True}
-
-
-### Chat logs (read-only write via /chat endpoint)
-
-
-@app.get("/chat_logs")
-async def list_chat_logs(limit: int = 200):
-    table = os.getenv("CHAT_LOGS_TABLE", "chat_logs")
-    rows = list_rows(table, select='*', limit=limit)
-    return {"data": rows}
-
-
-### AI Analysis endpoints
-
-
-@app.get('/ai/analysis')
-async def list_analyses(limit: int = 100):
-    table = os.getenv("AI_ANALYSIS_TABLE", "ai_analysis")
-    rows = list_rows(table, select='*', limit=limit)
-    return {"data": rows}
-
-
-@app.get('/ai/analysis/{analysis_id}')
-async def get_analysis(analysis_id: int):
-    table = os.getenv("AI_ANALYSIS_TABLE", "ai_analysis")
-    row = get_row(table, analysis_id)
-    if not row:
-        raise HTTPException(status_code=404, detail='Analysis not found')
-    return {"data": row}
 

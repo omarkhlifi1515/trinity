@@ -1,15 +1,41 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import supabase from '../lib/supabaseClient'
 
 export default function Sidebar() {
   const path = usePathname()
 
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const user = data?.session?.user
+        if (!mounted) return
+        if (user) {
+          // check user role in user_metadata or app_metadata
+          const meta = (user.user_metadata || {})
+          const appMeta = (user.app_metadata || {})
+          const role = meta.role || appMeta.role || user.role
+          if (role === 'admin' || (Array.isArray(role) && role.includes('admin'))) setIsAdmin(true)
+        }
+      } catch (e) {
+        // ignore
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
     { name: 'Toolbox', href: '/toolbox', icon: '🧰' },
-    { name: 'Trinity Chat', href: '/chat', icon: '🤖' },
+    { name: 'Messages', href: '/messages', icon: '💬' },
   ]
 
   return (
@@ -58,6 +84,13 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
+      {isAdmin && (
+        <div className="p-4 border-t border-slate-800/50">
+          <Link href="/admin" className="text-xs text-slate-300 hover:text-slate-100">
+            Admin Console
+          </Link>
+        </div>
+      )}
     </aside>
   )
 }

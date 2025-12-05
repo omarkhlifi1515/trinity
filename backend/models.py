@@ -1,71 +1,67 @@
 from pydantic import BaseModel
-from typing import Optional, Any, Dict
-
-
-class ChatRequest(BaseModel):
-    """Request schema for chat messages sent by clients.
-
-    - user_id: identifier for the user (int or string depending on your auth)
-    - message: the user's message to Trinity AI
-    """
-    user_id: Optional[int]
-    message: str
+from typing import Optional, List
 
 
 class StatsResponse(BaseModel):
-    """Response schema for dashboard statistics."""
     total_employees: int
-    class Config:
-        from_attributes = True
+
+    model_config = {
+        "from_attributes": True,
+    }
 
 
-class ProfileModel(BaseModel):
-    id: Optional[int]
-    full_name: str
-    email: Optional[str]
-    role: Optional[str]
-    extra: Optional[Dict[str, Any]] = None
-
-    class Config:
-        from_attributes = True
-
-
-class SectorModel(BaseModel):
+class Sector(BaseModel):
     id: Optional[int]
     name: str
     description: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+    }
 
 
-class GradeModel(BaseModel):
+class Tool(BaseModel):
     id: Optional[int]
     name: str
-    level: Optional[int] = None
+    url: Optional[str] = None
+    sector_id: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+    }
 
 
-class ChatLogModel(BaseModel):
+class Profile(BaseModel):
     id: Optional[int]
-    user_id: Optional[int]
-    role: str
-    message: str
+    user_id: Optional[str]
+    full_name: Optional[str]
+    email: Optional[str]
+    role: Optional[str] = "employee"
+    sector_id: Optional[int] = None
+    grade_id: Optional[int] = None
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class Message(BaseModel):
+    id: Optional[int]
+    sender_id: Optional[str]
+    receiver_id: Optional[str]
+    content: str
     created_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+    }
 
 
-class AIAnalysisModel(BaseModel):
-    id: Optional[int]
-    user_id: Optional[int]
-    input_text: str
-    analysis: str
-    meta: Optional[Dict[str, Any]] = None
-    created_at: Optional[str] = None
+class UserUpdate(BaseModel):
+    sector_id: Optional[int] = None
+    grade_id: Optional[int] = None
+    role: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+    }

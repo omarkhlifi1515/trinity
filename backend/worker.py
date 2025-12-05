@@ -1,77 +1,9 @@
-import os
-import logging
-from dotenv import load_dotenv
-import google.generativeai as genai
+"""
+Worker placeholder
 
-from database import get_client_singleton
-from crud import insert_row
+Background worker was removed in the Enterprise Hub refactor. This file is kept
+as a harmless placeholder so deployments referencing the path don't fail.
+"""
 
-load_dotenv()
-
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-1.5-flash")
-
-if not GOOGLE_API_KEY:
-    logging.warning("GOOGLE_API_KEY not set; analysis worker will fail until configured.")
-else:
-    try:
-        genai.configure(api_key=GOOGLE_API_KEY)
-    except Exception:
-        logging.exception("Failed to configure google-generativeai client in worker")
-
-supabase = get_client_singleton()
-
-
-def process_analysis(job_payload: dict):
-    """Job function executed by RQ worker.
-
-    Expects job_payload to contain at least:
-      - 'text': the content to analyze
-      - optionally 'user_id' and 'meta'
-
-    The function generates an analysis via OpenAI and inserts a row into `ai_analysis`.
-    """
-    try:
-        text = job_payload.get("text") if isinstance(job_payload, dict) else str(job_payload)
-        user_id = job_payload.get("user_id") if isinstance(job_payload, dict) else None
-        meta = job_payload.get("meta") if isinstance(job_payload, dict) else None
-
-        if not text:
-            logging.error("process_analysis called without text")
-            return None
-
-        system_prompt = (
-            "You are Trinity AI Analyst. Produce a concise structured analysis of the input, "
-            "highlighting entities, suggested actions, and a short summary."
-        )
-
-        prompt = system_prompt + "\n\nInput: " + text
-
-        # Use the recommended GenerativeModel API and extract `.text` if available
-        try:
-            model = genai.GenerativeModel(GOOGLE_MODEL)
-            full_prompt = prompt
-            response = model.generate_content(full_prompt)
-            analysis_text = getattr(response, "text", None)
-        except Exception:
-            logging.exception("process_analysis: Gemini generation failed")
-            analysis_text = None
-
-        if not analysis_text:
-            analysis_text = str(response) if 'response' in locals() else ''
-
-        # Insert analysis into Supabase `ai_analysis` table. Expected columns: user_id, input_text, analysis, meta
-        payload = {
-            "user_id": user_id,
-            "input_text": text,
-            "analysis": analysis_text,
-            "meta": meta,
-        }
-
-        inserted = insert_row(os.getenv("AI_ANALYSIS_TABLE", "ai_analysis"), payload)
-        logging.info("Inserted ai_analysis row: %s", inserted)
-        return inserted
-
-    except Exception:
-        logging.exception("process_analysis failed")
-        return None
+def process_analysis(*args, **kwargs):
+    return None
