@@ -24,23 +24,70 @@ export default function DashboardPage() {
     }
     fetchNews();
   }, []);
+        import { supabase } from "../../lib/supabase";
+        import { useRouter } from "next/navigation";
 
-  return (
-    <div className="flex">
-      <AppSidebar user={user} />
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold mb-4">Department News</h1>
-        <div className="space-y-4">
-          {news.length === 0 && <div className="text-sm text-muted-foreground">No news yet.</div>}
-          {news.map((n) => (
-            <article key={n.id} className="p-4 border rounded">
-              <h3 className="font-semibold">{n.title || "Untitled"}</h3>
-              <p className="text-sm">{n.body}</p>
-              <div className="text-xs text-gray-500">{n.created_at}</div>
-            </article>
-          ))}
-        </div>
-      </main>
-    </div>
-  );
-}
+        export default function DashboardPage() {
+          const router = useRouter();
+          const [user, setUser] = useState<any>(null);
+          const [news, setNews] = useState<any[]>([]);
+          const [loading, setLoading] = useState(true);
+
+          useEffect(() => {
+            async function init() {
+              // 1. Check Session
+              const { data } = await supabase.auth.getSession();
+              if (!data.session) {
+                router.push("/login");
+                return;
+              }
+              // 2. Set User (Using token details or fetching profile)
+              setUser({
+                id: data.session.user.id,
+                email: data.session.user.email,
+                role: "employee" // Default, later fetch from 'profiles' table
+              });
+              // 3. Fetch News
+              try {
+                const newsData = await apiGet("/department/news");
+                setNews(newsData.news || []);
+              } catch (e) {
+                console.error("Failed to fetch news:", e);
+              } finally {
+                setLoading(false);
+              }
+            }
+            init();
+          }, [router]);
+
+          if (loading) return <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center">Loading Workspace...</div>;
+
+          return (
+            <div className="flex min-h-screen bg-[#020617] text-slate-100">
+              <AppSidebar user={user} />
+              <main className="flex-1 p-8">
+                <header className="mb-8">
+                  <h1 className="text-3xl font-bold text-white tracking-tight">Department News</h1>
+                  <p className="text-slate-400 mt-2">Latest updates from your team.</p>
+                </header>
+                <div className="grid gap-4">
+                  {news.length === 0 && (
+                    <div className="p-8 border border-dashed border-slate-800 rounded-xl text-center text-slate-500">
+                      No news updates available.
+                    </div>
+                  )}
+                  {news.map((n) => (
+                    <article key={n.id} className="p-6 bg-[#0f172a] border border-slate-800 rounded-xl hover:border-slate-700 transition-colors">
+                      <h3 className="text-xl font-semibold text-cyan-400 mb-2">{n.title || "Update"}</h3>
+                      <p className="text-slate-300 leading-relaxed">{n.body}</p>
+                      <div className="mt-4 flex items-center text-xs text-slate-500 font-mono">
+                        <span>{new Date(n.created_at).toLocaleDateString()}</span>
+                        <span className="mx-2">•</span>
+                        <span className="uppercase tracking-wider">{n.department}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </main>
+            </div>
+          );
