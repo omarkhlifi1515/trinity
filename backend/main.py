@@ -4,6 +4,146 @@ from typing import Optional, List, Dict, Any
 
 import httpx
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware  # <--- IMPORT THIS
+from pydantic import BaseModel
+
+from deps import get_supabase_client, get_current_user
+
+app = FastAPI(title="Project Trinity - Backend")
+
+# --- CORS CONFIGURATION (Crucial for Web App) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins (Web & Mobile)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
+    allow_headers=["*"],  # Allows all headers (Authorization, etc.)
+)
+
+# --- MODELS ---
+class ChatMessage(BaseModel):
+    content: str
+    is_bot_command: Optional[bool] = False
+
+class N8NReply(BaseModel):
+    chat_user_id: str
+    reply: str
+
+class NewsUpdate(BaseModel):
+    department: str
+    articles: List[Dict[str, Any]]
+
+# --- ROUTES ---
+
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "Trinity V2 Backend is Active"}
+
+@app.get("/chat/history")
+async def get_chat_history(current_user=Depends(get_current_user)):
+    """Fetch chat history for the current user."""
+    sb = get_supabase_client()
+    try:
+        # Get messages for this user, sorted by time
+        res = sb.table("chat_messages").select("*").eq("user_id", current_user["id"]).order("created_at", desc=False).execute()
+        return {"messages": res.data if hasattr(res, "data") else []}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch history: {e}")
+
+@app.post("/chat/send")
+async def chat_send(msg: ChatMessage, current_user=Depends(get_current_user)):
+    """Save user message and trigger n8n if needed."""
+    sb = get_supabase_client()
+    now = datetime.datetime.utcnow().isoformat()
+    
+    payload = {
+        "user_id": current_user["id"],
+        "content": msg.content,
+        "is_bot_command": msg.is_bot_command,
+        "department": current_user.get("department", "general"),
+        "from_bot": False,
+        "created_at": now,
+    }
+
+    try:
+        sb.table("chat_messages").insert(payload).execute()
+    except Exception as e:
+        print(f"DB Error: {e}")
+        raise HTTPException(status_code=500, detail="Message save failed")
+
+    # Trigger n8n
+    # We check if it's a command OR if the user explicitly names "Trinity"
+    if msg.is_bot_command or "trinity" in msg.content.lower():
+        n8n_url = os.environ.get("N8N_WEBHOOK_URL")
+        if n8n_url:
+            # Fire and forget (don't wait for n8n to finish processing)
+            try:
+                async with httpx.AsyncClient() as client:
+                    # We send user info so n8n knows who to email/reply to
+                    await client.post(n8n_url, json={
+                        "user_id": current_user["id"],
+                        "user_email": current_user.get("email", ""),
+                        "message": msg.content,
+                        "department": current_user.get("department", "general")
+                    }, timeout=2.0) 
+            except Exception as e:
+                print(f"N8N Trigger Error: {e}")
+
+    return {"ok": True}
+
+@app.post("/chat/webhook")
+async def chat_webhook(body: N8NReply):
+    """Receive reply from n8n."""
+    sb = get_supabase_client()
+    now = datetime.datetime.utcnow().isoformat()
+    payload = {
+        "user_id": body.chat_user_id,
+        "content": body.reply,
+        "from_bot": True,
+        "created_at": now,
+    }
+    try:
+        sb.table("chat_messages").insert(payload).execute()
+    except Exception as e:
+        print(f"Webhook Error: {e}")
+        raise HTTPException(status_code=500, detail=f"DB insert failed: {e}")
+    return {"ok": True}
+
+@app.post("/news/update")
+async def update_news(payload: NewsUpdate):
+    """Receive news from n8n and save to DB."""
+    sb = get_supabase_client()
+    
+    rows = []
+    for article in payload.articles:
+        rows.append({
+            "department": payload.department,
+            "title": article.get("title"),
+            "body": article.get("description"),
+            "created_at": datetime.datetime.utcnow().isoformat()
+        })
+    
+    if rows:
+        try:
+            sb.table("department_news").insert(rows).execute()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save news: {e}")
+            
+    return {"count": len(rows)}
+
+@app.get("/department/news")
+async def department_news(current_user=Depends(get_current_user)):
+    sb = get_supabase_client()
+    # Default to 'general' department if not specified
+    dept = current_user.get("department", "general")
+    res = sb.table("department_news").select("*").eq("department", dept).order("created_at", desc=True).limit(10).execute()
+    return {"news": res.data if hasattr(res, "data") else []}
+import os
+import datetime
+from typing import Optional, List, Dict, Any
+
+import httpx
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 
 from deps import get_supabase_client, get_current_user, require_role
