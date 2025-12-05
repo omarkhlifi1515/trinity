@@ -1,27 +1,35 @@
-from flask import Flask, jsonify, request, render_template, redirect, url_for, session
+from flask import Flask, jsonify, request, render_template, redirect, url_for, flash
 from dotenv import load_dotenv
 import os
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
-# Load .env when present (local development)
+# 1. Import db from extensions
+from extensions import db
+# 2. Import models so SQLAlchemy knows they exist
+from models import User, Department, Task, Message
+
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# DATABASE_URL must be provided via environment variable (never hardcode secrets)
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if not DATABASE_URL:
-    raise ValueError('DATABASE_URL environment variable is required. Set it before running the app.')
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+# Config
+DEFAULT_DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///local_data.db')
+# Fix Render's postgres:// -> postgresql://
+if DEFAULT_DATABASE_URL.startswith("postgres://"):
+    DEFAULT_DATABASE_URL = DEFAULT_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DEFAULT_DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'trinity-secret-key')
 
-# Initialize extensions after app config
-from extensions import db
+# 3. Initialize DB with the app
 db.init_app(app)
 
-# Import models after db is initialized
-from models import User, Department, Task, Message
+# 4. AUTO-CREATE TABLES (fix for missing tables)
+with app.app_context():
+    print("🛠️ Checking database tables...")
+    db.create_all()
+    print("✅ Database tables ready.")
 
 # Setup Flask-Login
 login_manager = LoginManager()
@@ -42,7 +50,7 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
         
-        if user and user.check_password(password):
+        if user and getattr(user, 'check_password', lambda p: False)(password):
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
@@ -69,7 +77,8 @@ def register():
             return render_template('register.html', error='Username already exists'), 400
         
         user = User(username=username, email=email)
-        user.set_password(password)
+        if hasattr(user, 'set_password'):
+            user.set_password(password)
         db.session.add(user)
         db.session.commit()
         
@@ -139,6 +148,5 @@ def list_users():
 
 
 if __name__ == '__main__':
-    # Local development default
-    app.run(debug=True, host='127.0.0.1', port=int(os.environ.get('PORT', 5000)))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 

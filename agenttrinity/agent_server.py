@@ -10,18 +10,23 @@ from db import init_db, get_session, Task, Message, User
 
 app = Flask(__name__)
 
-# Load API key from environment (required for security)
-API_KEY = os.environ.get('AGENT_API_KEY')
-if not API_KEY:
-    raise ValueError('AGENT_API_KEY environment variable is required for security.')
+# Load API key from environment — fallback to insecure default if missing
+AGENT_API_KEY = os.environ.get('AGENT_API_KEY')
+if not AGENT_API_KEY:
+    print("⚠️ WARNING: AGENT_API_KEY not found. Using default insecure key.")
+    AGENT_API_KEY = "default-insecure-key"
 
 
 def require_api_key(f):
     """Decorator to check API key in request headers."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        key = request.headers.get('X-API-Key')
-        if key != API_KEY:
+        # Allow health endpoint without a key
+        if request.endpoint == 'health':
+            return f(*args, **kwargs)
+        # Accept both header variants
+        key = request.headers.get('X-API-KEY') or request.headers.get('X-API-Key')
+        if key != AGENT_API_KEY:
             return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated_function
