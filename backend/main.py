@@ -49,7 +49,7 @@ app.add_middleware(
 
 # Configure Google Generative AI (Gemini)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-pro")
+GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-1.5-flash")
 
 if not GOOGLE_API_KEY:
     logging.warning("GOOGLE_API_KEY not set; AI endpoints will fail until configured.")

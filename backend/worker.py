@@ -9,7 +9,7 @@ from crud import insert_row
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-pro")
+GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-1.5-flash")
 
 if not GOOGLE_API_KEY:
     logging.warning("GOOGLE_API_KEY not set; analysis worker will fail until configured.")
