@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card p-4">
+    <h3>My Tasks</h3>
+    <a href="{{ url_for('add_task') }}" class="btn btn-primary mb-3">+ Add Task</a>
+    <table class="table">
+      <thead><tr><th>ID</th><th>Title</th><th>Description</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.id }}</td>
+          <td>{{ task.title }}</td>
+          <td>{{ task.description[:50] or '-' }}</td>
+          <td><span class="badge bg-{% if task.status == 'Done' %}success{% elif task.status == 'In Progress' %}warning{% else %}secondary{% endif %}">{{ task.status }}</span></td>
+          <td>
+            {% if task.status != 'Done' %}
+              <a href="{{ url_for('update_task_status', task_id=task.id, status='Done') }}" class="btn btn-sm btn-success">✓ Done</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not tasks %}
+    <p class="text-muted">No tasks assigned to you.</p>
+    {% endif %}
+  </div>
+{% endblock %}
