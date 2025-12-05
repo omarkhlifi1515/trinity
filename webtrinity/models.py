@@ -1,15 +1,18 @@
-"""WebTrinity models using Flask-SQLAlchemy.
-
-Inherits from shared declarative models defined in models_shared.py.
-"""
-from extensions import db
-from models_shared import Base as SharedBase, User as SharedUser, Department as SharedDept, Task as SharedTask, Message as SharedMsg
 from flask_login import UserMixin
+from sqlalchemy.dialects.postgresql import JSON
+from datetime import datetime
+from extensions import db  # <--- CHANGED: Import from extensions, NOT app
 
 
-# Re-export shared models but bind them to Flask-SQLAlchemy instance
-class User(db.Model, UserMixin, SharedUser):
-    __tablename__ = 'user'
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(256))
+    role = db.Column(db.String(32))
+    password_hash = db.Column(db.String(256))  # Ensure you have this for login!
+    phone_number = db.Column(db.String(64))
+    department_id = db.Column(db.Integer, db.ForeignKey('department.id'))
+    status = db.Column(db.String(32), default='Active')
 
     def to_dict(self):
         return {
@@ -17,20 +20,30 @@ class User(db.Model, UserMixin, SharedUser):
             'username': self.username,
             'email': self.email,
             'role': self.role,
-            'phone_number': self.phone_number,
-            'department_id': self.department_id,
             'status': self.status,
         }
 
 
-class Department(db.Model, SharedDept):
-    __tablename__ = 'department'
+class Department(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 
-class Task(db.Model, SharedTask):
-    __tablename__ = 'task'
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(256))
+    description = db.Column(db.Text)
+    status = db.Column(db.String(32), default='Todo')
+    priority = db.Column(db.String(32))
+    due_date = db.Column(db.DateTime)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    assignees = db.Column(JSON)
 
 
-class Message(db.Model, SharedMsg):
-    __tablename__ = 'message'
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
