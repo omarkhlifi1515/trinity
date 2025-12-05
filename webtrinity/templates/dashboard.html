@@ -1,130 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Trinity{% endblock %}
-
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold neon-text-blue mb-2">Welcome, {{ current_user.username }}</h1>
-        <p class="text-gray-400">Trinity Workplace OS Dashboard</p>
-    </div>
-
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <!-- Total Tasks -->
-        <div class="card-trinity">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm uppercase tracking-wide">Total Tasks</p>
-                    <p class="text-3xl font-bold neon-text-blue mt-2">{{ stats.total_tasks }}</p>
-                </div>
-                <div class="text-5xl opacity-20">📋</div>
-            </div>
-        </div>
-
-        <!-- In Progress -->
-        <div class="card-trinity">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm uppercase tracking-wide">In Progress</p>
-                    <p class="text-3xl font-bold text-blue-400 mt-2">{{ stats.in_progress }}</p>
-                </div>
-                <div class="text-5xl opacity-20">⚙️</div>
-            </div>
-        </div>
-
-        <!-- Completed -->
-        <div class="card-trinity">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm uppercase tracking-wide">Completed</p>
-                    <p class="text-3xl font-bold text-green-400 mt-2">{{ stats.done }}</p>
-                </div>
-                <div class="text-5xl opacity-20">✅</div>
-            </div>
-        </div>
-
-        <!-- To Do -->
-        <div class="card-trinity">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-400 text-sm uppercase tracking-wide">To Do</p>
-                    <p class="text-3xl font-bold text-amber-400 mt-2">{{ stats.todo }}</p>
-                </div>
-                <div class="text-5xl opacity-20">📌</div>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Total Users</h6>
+                <h2 class="text-primary">42</h2>
+                <small class="text-success"><i class="fa-solid fa-arrow-up"></i> +5 this week</small>
             </div>
         </div>
     </div>
-
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Create Task Section -->
-        <div class="card-trinity">
-            <h2 class="text-2xl font-bold neon-text-blue mb-6">Create New Task</h2>
-            <form class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Task Title</label>
-                    <input type="text" placeholder="Enter task title..." class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-400">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                    <textarea placeholder="Task description..." rows="3" class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-400"></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Priority</label>
-                        <select class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-400">
-                            <option>Low</option>
-                            <option selected>Medium</option>
-                            <option>High</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Due Date</label>
-                        <input type="date" class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-400">
-                    </div>
-                </div>
-                <button type="submit" class="btn-trinity w-full">Create Task</button>
-            </form>
-        </div>
-
-        <!-- System Status -->
-        <div class="card-trinity">
-            <h2 class="text-2xl font-bold neon-text-purple mb-6">System Status</h2>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-400">Web Server</span>
-                    <span class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span class="text-green-400">Running</span>
-                    </span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-400">Agent Service</span>
-                    <span class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span class="text-green-400">Running</span>
-                    </span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-400">Database</span>
-                    <span class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span class="text-green-400">Connected</span>
-                    </span>
-                </div>
-                <hr class="border-cyan-500/20 my-4">
-                <p class="text-gray-400 text-sm">🚀 Trinity is operating at peak efficiency. All systems nominal.</p>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Active Tasks</h6>
+                <h2 class="text-warning">8</h2>
+                <small class="text-info"><i class="fa-solid fa-hourglass-end"></i> 3 running</small>
             </div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">System Health</h6>
+                <h2 class="text-success">99%</h2>
+                <small class="text-success"><i class="fa-solid fa-check"></i> All systems operational</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Agent Status</h6>
+                <h2 class="text-success">Connected</h2>
+                <small class="text-muted">Last sync: 2 mins ago</small>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- Recent Tasks -->
-    <div class="mt-8 card-trinity">
-        <h2 class="text-2xl font-bold neon-text-blue mb-6">Recent Tasks</h2>
-        <div class="space-y-4">
-            <p class="text-gray-400 text-center py-8">No tasks yet. Create one to get started! 🚀</p>
+<div class="row mt-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-dark">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Event</th>
+                                <th>User</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>14:32</td>
+                                <td>Nmap scan completed</td>
+                                <td>admin</td>
+                                <td><span class="badge bg-success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>14:15</td>
+                                <td>SQLMap vulnerability check</td>
+                                <td>admin</td>
+                                <td><span class="badge bg-warning">In Progress</span></td>
+                            </tr>
+                            <tr>
+                                <td>13:58</td>
+                                <td>User login</td>
+                                <td>john_doe</td>
+                                <td><span class="badge bg-info">Info</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary w-100 mb-2"><i class="fa-solid fa-play"></i> Start Nmap Scan</button>
+                <button class="btn btn-warning w-100 mb-2"><i class="fa-solid fa-database"></i> Run SQL Check</button>
+                <button class="btn btn-danger w-100 mb-2"><i class="fa-solid fa-message"></i> Send Message</button>
+                <button class="btn btn-secondary w-100"><i class="fa-solid fa-arrow-rotate-right"></i> Refresh Status</button>
+            </div>
         </div>
     </div>
 </div>

@@ -3,136 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Trinity Workplace OS{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Trinity C2 | {{ page }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --trinity-dark: #0f172a;
-            --trinity-slate: #1e293b;
-            --trinity-neon-blue: #38bdf8;
-            --trinity-neon-purple: #a78bfa;
-            --trinity-accent-green: #10b981;
-        }
-
-        * {
-            @apply transition-colors duration-300;
-        }
-
-        body {
-            background: linear-gradient(135deg, var(--trinity-dark) 0%, #1a1f3a 100%);
-            color: #e2e8f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        /* Glassmorphism Effect */
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            @apply rounded-lg;
-        }
-
-        /* Neon Text Shadow */
-        .neon-text-blue {
-            text-shadow: 0 0 15px rgba(56, 189, 248, 0.6), 0 0 30px rgba(56, 189, 248, 0.3);
-        }
-
-        .neon-text-purple {
-            text-shadow: 0 0 15px rgba(167, 139, 250, 0.6), 0 0 30px rgba(167, 139, 250, 0.3);
-        }
-
-        /* Hover Glow Effect */
-        .glow-hover {
-            @apply hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-300;
-        }
-
-        /* Button Styles */
-        .btn-trinity {
-            @apply px-4 py-2 rounded-lg font-semibold transition-all duration-300;
-            background: linear-gradient(135deg, var(--trinity-neon-blue) 0%, var(--trinity-neon-purple) 100%);
-            color: white;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-        }
-
-        .btn-trinity:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.8);
-        }
-
-        .btn-secondary {
-            @apply px-4 py-2 rounded-lg font-semibold border border-cyan-500/50 text-cyan-400;
-        }
-
-        .btn-secondary:hover {
-            @apply bg-cyan-500/10;
-        }
-
-        /* Card Hover Animation */
-        .card-trinity {
-            @apply glass-panel p-6 glow-hover;
-        }
-
-        /* Status Badges */
-        .badge-done {
-            @apply bg-green-500/20 text-green-300 px-3 py-1 rounded-full text-sm;
-        }
-
-        .badge-in-progress {
-            @apply bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm;
-        }
-
-        .badge-todo {
-            @apply bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-sm;
-        }
-
-        /* Navbar */
-        .navbar-trinity {
-            @apply glass-panel border-b border-cyan-500/20;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(20px);
-        }
-
-        /* Animation */
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { height: 100vh; background-color: #1e1e1e; border-right: 1px solid #333; position: fixed; width: 250px; overflow-y: auto; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #333; }
+        .sidebar a { display: block; padding: 12px 20px; color: #aaa; text-decoration: none; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background-color: #0d6efd; color: white; }
+        .sidebar i { margin-right: 10px; width: 20px; }
+        .content { margin-left: 250px; padding: 30px; }
+        .card { background-color: #1e1e1e; border: 1px solid #333; color: #fff; margin-bottom: 20px; }
+        .table { color: #ccc; }
+        .navbar-dark { background-color: #1e1e1e !important; border-bottom: 1px solid #333; }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    {% if current_user.is_authenticated %}
-    <nav class="navbar-trinity">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <span class="text-2xl font-bold neon-text-blue">⚛️ Trinity</span>
-                <span class="text-sm text-gray-400">Workplace OS</span>
-            </div>
-            <div class="flex items-center space-x-6">
-                <a href="{{ url_for('dashboard') }}" class="hover:text-cyan-400 text-gray-300">Dashboard</a>
-                <a href="#" class="hover:text-cyan-400 text-gray-300">Tasks</a>
-                <a href="#" class="hover:text-cyan-400 text-gray-300">Team</a>
-                <div class="flex items-center space-x-3">
-                    <span class="text-sm">{{ current_user.username }}</span>
-                    <a href="{{ url_for('logout') }}" class="btn-secondary text-sm">Logout</a>
-                </div>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h4 class="text-primary"><i class="fa-solid fa-network-wired"></i> TRINITY</h4>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="{{ 'active' if page == 'Dashboard' else '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a href="{{ url_for('live_map') }}"><i class="fa-solid fa-earth-americas"></i> Live Map</a>
+    <a href="{{ url_for('tasks') }}"><i class="fa-solid fa-list-check"></i> Task Manager</a>
+    <a href="{{ url_for('users') }}"><i class="fa-solid fa-users"></i> User Mgmt</a>
+    
+    <div class="text-muted small px-3 mt-3 mb-1">SCANNERS</div>
+    <a href="{{ url_for('tool_nmap') }}"><i class="fa-solid fa-radar"></i> Nmap</a>
+    <a href="{{ url_for('tool_sqlmap') }}"><i class="fa-solid fa-database"></i> SQLMap</a>
+    <a href="{{ url_for('tool_nikto') }}"><i class="fa-solid fa-bug"></i> Nikto</a>
+    <a href="{{ url_for('tool_nuclei') }}"><i class="fa-solid fa-bolt"></i> Nuclei</a>
+
+    <div class="text-muted small px-3 mt-3 mb-1">DATA</div>
+    <a href="{{ url_for('chat') }}"><i class="fa-solid fa-comments"></i> Secure Chat</a>
+    <a href="{{ url_for('files') }}"><i class="fa-solid fa-file-arrow-down"></i> Exfiltrated Files</a>
+    <a href="{{ url_for('logs') }}"><i class="fa-solid fa-terminal"></i> System Logs</a>
+
+    <div class="text-muted small px-3 mt-3 mb-1">SYSTEM</div>
+    <a href="{{ url_for('departments') }}"><i class="fa-solid fa-building"></i> Departments</a>
+    <a href="{{ url_for('api_keys') }}"><i class="fa-solid fa-key"></i> API Keys</a>
+    <a href="{{ url_for('settings') }}"><i class="fa-solid fa-gear"></i> Settings</a>
+    <a href="{{ url_for('logout') }}" class="text-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+</div>
+
+<div class="content">
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4 rounded">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">{{ page }}</span>
+            <div class="d-flex">
+                <span class="text-muted me-3">User: <strong>{{ current_user.username }}</strong></span>
+                <span class="badge bg-success">Online</span>
             </div>
         </div>
     </nav>
-    {% endif %}
 
-    <!-- Main Content -->
-    <main class="min-h-screen">
-        {% block content %}{% endblock %}
-    </main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-    <!-- Footer -->
-    <footer class="mt-12 py-6 border-t border-cyan-500/20 text-center text-gray-500">
-        <p>&copy; 2025 Trinity OS. See <a href="/TRINITY_IDENTITY.md" class="text-cyan-400 hover:text-cyan-300">TRINITY_IDENTITY.md</a> for details.</p>
-    </footer>
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
