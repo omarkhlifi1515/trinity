@@ -4,7 +4,7 @@
             "outputFile": "com.example.mobiletrinity.app-mergeDebugResources-46:/values-sq/values-sq.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\msi\\.gradle\\caches\\transforms-3\\09bbc870a8210e3fba487dc4f2147f36\\transformed\\material3-1.1.2\\res\\values-sq\\values-sq.xml",
+                    "source": "C:\\Users\\msi\\.gradle\\caches\\8.13\\transforms\\afe1132b57ed7464a29ce4b34ab04563\\transformed\\material3-1.1.2\\res\\values-sq\\values-sq.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\msi\\.gradle\\caches\\transforms-3\\6930f8e8280433350929c28456823343\\transformed\\core-1.12.0\\res\\values-sq\\values-sq.xml",
+                    "source": "C:\\Users\\msi\\.gradle\\caches\\8.13\\transforms\\08802e708134d724944d419c5e70c5c1\\transformed\\core-1.12.0\\res\\values-sq\\values-sq.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\msi\\.gradle\\caches\\transforms-3\\475a14c5e8ad6821e3744bffc66b99ad\\transformed\\ui-release\\res\\values-sq\\values-sq.xml",
+                    "source": "C:\\Users\\msi\\.gradle\\caches\\8.13\\transforms\\1e9138994b07ac7c318827c5e374bfab\\transformed\\ui-release\\res\\values-sq\\values-sq.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
