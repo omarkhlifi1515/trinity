@@ -47,36 +47,18 @@ def process_analysis(job_payload: dict):
 
         prompt = system_prompt + "\n\nInput: " + text
 
-        # Try a couple of call patterns depending on the installed google-generativeai version
+        # Use the recommended GenerativeModel API and extract `.text` if available
         try:
-            resp = genai.generate_text(model=GOOGLE_MODEL, prompt=prompt, max_output_tokens=800, temperature=0.0)
+            model = genai.GenerativeModel(GOOGLE_MODEL)
+            full_prompt = prompt
+            response = model.generate_content(full_prompt)
+            analysis_text = getattr(response, "text", None)
         except Exception:
-            resp = genai.generate(model=GOOGLE_MODEL, prompt=prompt)
-
-        # Conservative extraction of the returned text
-        analysis_text = None
-        try:
-            if isinstance(resp, dict) and "candidates" in resp and resp["candidates"]:
-                cand = resp["candidates"][0]
-                analysis_text = cand.get("content") or cand.get("output") or cand.get("text")
-        except Exception:
-            logging.debug("Worker: failed dict-like extraction", exc_info=True)
+            logging.exception("process_analysis: Gemini generation failed")
+            analysis_text = None
 
         if not analysis_text:
-            # Try attribute style
-            try:
-                cands = getattr(resp, "candidates", None)
-                if cands:
-                    c0 = cands[0]
-                    for attr in ("content", "output", "text"):
-                        if hasattr(c0, attr):
-                            analysis_text = getattr(c0, attr)
-                            break
-            except Exception:
-                logging.debug("Worker: failed object-like extraction", exc_info=True)
-
-        if not analysis_text:
-            analysis_text = str(resp)
+            analysis_text = str(response) if 'response' in locals() else ''
 
         # Insert analysis into Supabase `ai_analysis` table. Expected columns: user_id, input_text, analysis, meta
         payload = {

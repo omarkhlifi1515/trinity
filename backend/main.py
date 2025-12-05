@@ -114,14 +114,18 @@ async def chat_endpoint(req: ChatRequest):
         # Use Google Generative AI (Gemini) to generate a short response.
         prompt = system_prompt + "\n\nUser: " + req.message
 
-        # Try common client call - this may vary by package version; extract conservatively.
+        # Use the google-generativeai SDK (Gemini) via GenerativeModel.generate_content
         try:
-            resp = genai.generate_text(model=GOOGLE_MODEL, prompt=prompt)
-        except Exception:
-            # Try alternative call signatures
-            resp = genai.generate(model=GOOGLE_MODEL, prompt=prompt)
-
-        ai_text = _extract_genai_text(resp).strip()
+            model = genai.GenerativeModel(GOOGLE_MODEL)
+            full_prompt = prompt
+            response = model.generate_content(full_prompt)
+            ai_text = getattr(response, "text", None)
+            if not ai_text:
+                ai_text = _extract_genai_text(response)
+            ai_text = ai_text.strip()
+        except Exception as e:
+            logging.exception("Gemini generation failed")
+            raise HTTPException(status_code=500, detail=f"AI generation failed: {e}")
 
     except Exception as e:
         logging.exception("Gemini generation failed")
