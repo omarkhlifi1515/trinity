@@ -1,40 +1,27 @@
 package com.example.mobiletrinity.network
 
+import com.example.mobiletrinity.api.AgentApiService
+import com.example.mobiletrinity.api.ApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import com.example.mobiletrinity.Config
-import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    // ============ HTTP CLIENT WITH LOGGING ============
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+    private const val BASE_URL_WEB = "https://trinity-web-04bi.onrender.com/"
+    private const val BASE_URL_AGENT = "https://trinity-agent.onrender.com/"
+
+    val webApi: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL_WEB)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .connectTimeout(Config.CONNECT_TIMEOUT, TimeUnit.SECONDS)
-        .readTimeout(Config.READ_TIMEOUT, TimeUnit.SECONDS)
-        .writeTimeout(Config.WRITE_TIMEOUT, TimeUnit.SECONDS)
-        .build()
-
-    // ============ WEB API RETROFIT INSTANCE ============
-    private val webRetrofit = Retrofit.Builder()
-        .baseUrl(Config.WEB_BASE_URL)
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val webApi: WebApiService = webRetrofit.create(WebApiService::class.java)
-
-    // ============ AGENT API RETROFIT INSTANCE ============
-    private val agentRetrofit = Retrofit.Builder()
-        .baseUrl(Config.AGENT_BASE_URL)
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val agentApi: AgentApiService = agentRetrofit.create(AgentApiService::class.java)
+    val agentApi: AgentApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL_AGENT)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AgentApiService::class.java)
+    }
 }

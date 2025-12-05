@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application") version "7.4.2"
     kotlin("android") version "1.8.10"
+    kotlin("kapt") version "1.8.10"
 }
 
 android {
@@ -62,7 +63,7 @@ dependencies {
     // Room (Local DB)
     implementation("androidx.room:room-runtime:2.5.2")
     implementation("androidx.room:room-ktx:2.5.2")
-    annotationProcessor("androidx.room:room-compiler:2.5.2")
+    kapt("androidx.room:room-compiler:2.5.2")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")

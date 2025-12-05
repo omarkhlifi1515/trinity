@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import com.example.mobiletrinity.api.StatusUpdateRequest
+import com.example.mobiletrinity.api.TaskRequest
 import com.example.mobiletrinity.network.RetrofitClient
 import com.example.mobiletrinity.data.*
 import com.example.mobiletrinity.ui.screens.TaskListScreen
@@ -25,8 +27,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         // Initialize Dual-Core Network Clients
-        // webApi client: connects to https://trinity-web-04bi.onrender.com/
-        // agentApi client: connects to https://trinity-agent.onrender.com/
         val webApiService = RetrofitClient.webApi
         val agentApiService = RetrofitClient.agentApi
         
@@ -34,9 +34,9 @@ class MainActivity : ComponentActivity() {
         val database = TaskDatabase.getInstance(this)
         val taskDao = database.taskDao()
         
-        // Initialize Repository (uses web API for task CRUD operations)
+        // Initialize Repository
         repository = TaskRepository(
-            apiService = TODO("Remove after refactoring"),
+            apiService = webApiService,
             taskDao = taskDao
         )
         
@@ -63,15 +63,16 @@ class MainActivity : ComponentActivity() {
                         systemHealth = stats.systemHealth
                         
                         // ============ SYNC TASKS FROM WEB API ============
-                        val taskList = webApiService.getTasks()
-                        tasks = taskList.tasks.map { taskDto ->
+                        val remoteTasks = webApiService.getTasks()
+                        tasks = remoteTasks.map { taskDto ->
                             Task(
                                 id = taskDto.id,
                                 title = taskDto.title,
-                                description = "Remote task",
-                                priority = "High",
-                                dueDate = taskDto.createdAt,
-                                status = taskDto.status
+                                description = taskDto.description,
+                                priority = taskDto.priority,
+                                status = taskDto.status,
+                                dueDate = taskDto.dueDate,
+                                createdAt = taskDto.createdAt
                             )
                         }
                         isLoading = false
@@ -123,19 +124,29 @@ class MainActivity : ComponentActivity() {
                         TaskListScreen(
                             tasks = tasks,
                             isLoading = isLoading,
-                            onTaskCreate = { title, desc, priority, dueDate ->
+                            onTaskCreate = { title, desc, priority, _ ->
                                 lifecycleScope.launch {
                                     try {
                                         // Create task via WEB API
-                                        val taskRequest = com.example.mobiletrinity.network.TaskRequest(
+                                        val taskRequest = TaskRequest(
                                             title = title,
                                             description = desc,
                                             priority = priority
                                         )
-                                        val response = webApiService.createTask(taskRequest)
+                                        webApiService.createTask(taskRequest)
                                         // Refresh task list
                                         val updatedTasks = webApiService.getTasks()
-                                        tasks = updatedTasks.tasks.map { it }
+                                        tasks = updatedTasks.map { taskDto ->
+                                            Task(
+                                                id = taskDto.id,
+                                                title = taskDto.title,
+                                                description = taskDto.description,
+                                                priority = taskDto.priority,
+                                                status = taskDto.status,
+                                                dueDate = taskDto.dueDate,
+                                                createdAt = taskDto.createdAt
+                                            )
+                                        }
                                     } catch (e: Exception) {
                                         println("Error creating task: ${e.message}")
                                     }
@@ -144,27 +155,71 @@ class MainActivity : ComponentActivity() {
                             onTaskEdit = { /* Placeholder */ },
                             onTaskDelete = { task ->
                                 lifecycleScope.launch {
-                                    // Delete task (implement endpoint as needed)
-                                    println("Deleting task: ${task.id}")
+                                    try {
+                                        webApiService.deleteTask(task.id)
+                                        // Refresh task list
+                                        val updatedTasks = webApiService.getTasks()
+                                        tasks = updatedTasks.map { taskDto ->
+                                            Task(
+                                                id = taskDto.id,
+                                                title = taskDto.title,
+                                                description = taskDto.description,
+                                                priority = taskDto.priority,
+                                                status = taskDto.status,
+                                                dueDate = taskDto.dueDate,
+                                                createdAt = taskDto.createdAt
+                                            )
+                                        }
+                                    } catch (e: Exception) {
+                                        println("Error deleting task: ${e.message}")
+                                    }
                                 }
                             },
                             onTaskStatusChange = { task, newStatus ->
                                 lifecycleScope.launch {
-                                    // Update task status
-                                    println("Updated task ${task.id} to $newStatus")
+                                    try {
+                                        val request = StatusUpdateRequest(task.id, newStatus)
+                                        webApiService.updateTaskStatus(task.id, request)
+                                        // Refresh task list
+                                        val updatedTasks = webApiService.getTasks()
+                                        tasks = updatedTasks.map { taskDto ->
+                                            Task(
+                                                id = taskDto.id,
+                                                title = taskDto.title,
+                                                description = taskDto.description,
+                                                priority = taskDto.priority,
+                                                status = taskDto.status,
+                                                dueDate = taskDto.dueDate,
+                                                createdAt = taskDto.createdAt
+                                            )
+                                        }
+                                    } catch (e: Exception) {
+                                        println("Error updating task: ${e.message}")
+                                    }
                                 }
                             },
                             onRefresh = {
                                 lifecycleScope.launch {
                                     try {
                                         val updatedTasks = webApiService.getTasks()
-                                        tasks = updatedTasks.tasks.map { it }
+                                        tasks = updatedTasks.map { taskDto ->
+                                            Task(
+                                                id = taskDto.id,
+                                                title = taskDto.title,
+                                                description = taskDto.description,
+                                                priority = taskDto.priority,
+                                                status = taskDto.status,
+                                                dueDate = taskDto.dueDate,
+                                                createdAt = taskDto.createdAt
+                                            )
+                                        }
                                     } catch (e: Exception) {
                                         println("Error refreshing tasks: ${e.message}")
                                     }
                                 }
                             }
                         )
+                    }
                 }
             }
         }
