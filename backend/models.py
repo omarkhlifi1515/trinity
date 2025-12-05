@@ -15,9 +15,8 @@ class ChatRequest(BaseModel):
 class StatsResponse(BaseModel):
     """Response schema for dashboard statistics."""
     total_employees: int
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProfileModel(BaseModel):
@@ -27,17 +26,26 @@ class ProfileModel(BaseModel):
     role: Optional[str]
     extra: Optional[Dict[str, Any]] = None
 
+    class Config:
+        from_attributes = True
+
 
 class SectorModel(BaseModel):
     id: Optional[int]
     name: str
     description: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+
 
 class GradeModel(BaseModel):
     id: Optional[int]
     name: str
     level: Optional[int] = None
+
+    class Config:
+        from_attributes = True
 
 
 class ChatLogModel(BaseModel):
@@ -47,6 +55,9 @@ class ChatLogModel(BaseModel):
     message: str
     created_at: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+
 
 class AIAnalysisModel(BaseModel):
     id: Optional[int]
@@ -55,3 +66,6 @@ class AIAnalysisModel(BaseModel):
     analysis: str
     meta: Optional[Dict[str, Any]] = None
     created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True

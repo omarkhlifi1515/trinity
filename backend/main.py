@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import openai
+import google.generativeai as genai
 
 from models import ChatRequest, StatsResponse
 from database import get_client_singleton
@@ -47,14 +47,46 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure OpenAI
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+# Configure Google Generative AI (Gemini)
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-pro")
 
-if not OPENAI_API_KEY:
-    logging.warning("OPENAI_API_KEY not set; AI endpoints will fail until configured.")
+if not GOOGLE_API_KEY:
+    logging.warning("GOOGLE_API_KEY not set; AI endpoints will fail until configured.")
 else:
-    openai.api_key = OPENAI_API_KEY
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+    except Exception:
+        logging.exception("Failed to configure google-generativeai client")
+
+def _extract_genai_text(resp) -> str:
+    """Attempt to extract text from various google-generativeai response shapes."""
+    try:
+        # dict-like responses
+        if isinstance(resp, dict):
+            # common shapes
+            if "candidates" in resp and resp["candidates"]:
+                cand = resp["candidates"][0]
+                for k in ("content", "output", "text"):
+                    if k in cand:
+                        return cand[k]
+            for k in ("output", "content", "text"):
+                if k in resp:
+                    return resp[k]
+
+        # object-like responses
+        candidates = getattr(resp, "candidates", None)
+        if candidates:
+            cand0 = candidates[0]
+            for attr in ("content", "output", "text"):
+                if hasattr(cand0, attr):
+                    return getattr(cand0, attr)
+
+    except Exception:
+        logging.debug("Failed to extract text from genai response", exc_info=True)
+
+    # Fallback to string representation
+    return str(resp)
 
 # Supabase client (singleton)
 supabase = get_client_singleton()
@@ -79,21 +111,20 @@ async def chat_endpoint(req: ChatRequest):
     )
 
     try:
-        # Use OpenAI ChatCompletion for a safe, predictable chat interface.
-        response = openai.ChatCompletion.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": req.message},
-            ],
-            max_tokens=512,
-            temperature=0.2,
-        )
+        # Use Google Generative AI (Gemini) to generate a short response.
+        prompt = system_prompt + "\n\nUser: " + req.message
 
-        ai_text = response["choices"][0]["message"]["content"].strip()
+        # Try common client call - this may vary by package version; extract conservatively.
+        try:
+            resp = genai.generate_text(model=GOOGLE_MODEL, prompt=prompt)
+        except Exception:
+            # Try alternative call signatures
+            resp = genai.generate(model=GOOGLE_MODEL, prompt=prompt)
+
+        ai_text = _extract_genai_text(resp).strip()
 
     except Exception as e:
-        logging.exception("OpenAI request failed")
+        logging.exception("Gemini generation failed")
         raise HTTPException(status_code=500, detail=f"AI generation failed: {e}")
 
     # Persist both user and assistant messages into Supabase `chat_logs` table.
@@ -113,6 +144,13 @@ async def chat_endpoint(req: ChatRequest):
         logging.exception("Failed to insert chat logs into Supabase")
 
     return {"reply": ai_text}
+
+
+
+@app.get("/")
+async def root():
+    """Root health endpoint to satisfy Render and other hosting health checks."""
+    return {"status": "online", "message": "Trinity Backend is running"}
 
 
 @app.post('/ai/analyze')

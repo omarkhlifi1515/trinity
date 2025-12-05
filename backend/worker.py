@@ -1,20 +1,23 @@
 import os
 import logging
 from dotenv import load_dotenv
-import openai
+import google.generativeai as genai
 
 from database import get_client_singleton
 from crud import insert_row
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "gemini-pro")
 
-if not OPENAI_API_KEY:
-    logging.warning("OPENAI_API_KEY not set; analysis worker will fail until configured.")
+if not GOOGLE_API_KEY:
+    logging.warning("GOOGLE_API_KEY not set; analysis worker will fail until configured.")
 else:
-    openai.api_key = OPENAI_API_KEY
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+    except Exception:
+        logging.exception("Failed to configure google-generativeai client in worker")
 
 supabase = get_client_singleton()
 
@@ -42,17 +45,38 @@ def process_analysis(job_payload: dict):
             "highlighting entities, suggested actions, and a short summary."
         )
 
-        response = openai.ChatCompletion.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text},
-            ],
-            max_tokens=800,
-            temperature=0.0,
-        )
+        prompt = system_prompt + "\n\nInput: " + text
 
-        analysis_text = response["choices"][0]["message"]["content"].strip()
+        # Try a couple of call patterns depending on the installed google-generativeai version
+        try:
+            resp = genai.generate_text(model=GOOGLE_MODEL, prompt=prompt, max_output_tokens=800, temperature=0.0)
+        except Exception:
+            resp = genai.generate(model=GOOGLE_MODEL, prompt=prompt)
+
+        # Conservative extraction of the returned text
+        analysis_text = None
+        try:
+            if isinstance(resp, dict) and "candidates" in resp and resp["candidates"]:
+                cand = resp["candidates"][0]
+                analysis_text = cand.get("content") or cand.get("output") or cand.get("text")
+        except Exception:
+            logging.debug("Worker: failed dict-like extraction", exc_info=True)
+
+        if not analysis_text:
+            # Try attribute style
+            try:
+                cands = getattr(resp, "candidates", None)
+                if cands:
+                    c0 = cands[0]
+                    for attr in ("content", "output", "text"):
+                        if hasattr(c0, attr):
+                            analysis_text = getattr(c0, attr)
+                            break
+            except Exception:
+                logging.debug("Worker: failed object-like extraction", exc_info=True)
+
+        if not analysis_text:
+            analysis_text = str(resp)
 
         # Insert analysis into Supabase `ai_analysis` table. Expected columns: user_id, input_text, analysis, meta
         payload = {
