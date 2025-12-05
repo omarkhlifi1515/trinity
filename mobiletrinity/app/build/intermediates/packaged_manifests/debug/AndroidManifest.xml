@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="24"
-        android:targetSdkVersion="33" />
+        android:targetSdkVersion="34" />
 
     <!-- Network permissions for Retrofit API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -22,9 +22,8 @@
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:label="MobileTrinity"
-        android:testOnly="true"
         android:usesCleartextTraffic="false" >
         <activity
             android:name="com.example.mobiletrinity.MainActivity"
