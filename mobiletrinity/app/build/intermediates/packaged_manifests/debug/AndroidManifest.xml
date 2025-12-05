@@ -24,6 +24,7 @@
         android:extractNativeLibs="false"
         android:icon="@drawable/ic_launcher"
         android:label="MobileTrinity"
+        android:testOnly="true"
         android:usesCleartextTraffic="false" >
         <activity
             android:name="com.example.mobiletrinity.MainActivity"
