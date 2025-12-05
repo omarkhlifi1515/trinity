@@ -4,23 +4,23 @@ from typing import Optional, List, Dict, Any
 
 import httpx
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware  # <--- IMPORT THIS
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from deps import get_supabase_client, get_current_user
+from deps import get_supabase_client, get_current_user, require_role
 
 app = FastAPI(title="Project Trinity - Backend")
 
-# --- CORS CONFIGURATION (Crucial for Web App) ---
+# --- 1. CORS CONFIGURATION (Fixes the 405 Errors) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (Web & Mobile)
+    allow_origins=["*"],  # Allows all origins (Web, Mobile, n8n)
     allow_credentials=True,
-    allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
-    allow_headers=["*"],  # Allows all headers (Authorization, etc.)
+    allow_methods=["*"],  # Allows GET, POST, OPTIONS, PUT, DELETE
+    allow_headers=["*"],  # Allows Authorization header
 )
 
-# --- MODELS ---
+# --- 2. MODELS ---
 class ChatMessage(BaseModel):
     content: str
     is_bot_command: Optional[bool] = False
@@ -33,7 +33,7 @@ class NewsUpdate(BaseModel):
     department: str
     articles: List[Dict[str, Any]]
 
-# --- ROUTES ---
+# --- 3. ROUTES ---
 
 @app.get("/")
 def read_root():
@@ -44,7 +44,6 @@ async def get_chat_history(current_user=Depends(get_current_user)):
     """Fetch chat history for the current user."""
     sb = get_supabase_client()
     try:
-        # Get messages for this user, sorted by time
         res = sb.table("chat_messages").select("*").eq("user_id", current_user["id"]).order("created_at", desc=False).execute()
         return {"messages": res.data if hasattr(res, "data") else []}
     except Exception as e:
@@ -72,14 +71,11 @@ async def chat_send(msg: ChatMessage, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Message save failed")
 
     # Trigger n8n
-    # We check if it's a command OR if the user explicitly names "Trinity"
     if msg.is_bot_command or "trinity" in msg.content.lower():
         n8n_url = os.environ.get("N8N_WEBHOOK_URL")
         if n8n_url:
-            # Fire and forget (don't wait for n8n to finish processing)
             try:
                 async with httpx.AsyncClient() as client:
-                    # We send user info so n8n knows who to email/reply to
                     await client.post(n8n_url, json={
                         "user_id": current_user["id"],
                         "user_email": current_user.get("email", ""),
@@ -134,7 +130,6 @@ async def update_news(payload: NewsUpdate):
 @app.get("/department/news")
 async def department_news(current_user=Depends(get_current_user)):
     sb = get_supabase_client()
-    # Default to 'general' department if not specified
     dept = current_user.get("department", "general")
     res = sb.table("department_news").select("*").eq("department", dept).order("created_at", desc=True).limit(10).execute()
     return {"news": res.data if hasattr(res, "data") else []}
