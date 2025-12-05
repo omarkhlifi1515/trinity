@@ -30,9 +30,8 @@ class TaskRepository(
         Result.failure(e)
     }
     
-    fun getTasksFlow(): Flow<List<Task>> = flow {
-        val tasks = taskDao.getAllTasks()
-        emit(tasks)
+    fun getTasksFlow(): Flow<List<Task>> {
+        return taskDao.getAllTasks()
     }
     
     suspend fun getTasksByStatus(status: String): Result<List<Task>> = try {

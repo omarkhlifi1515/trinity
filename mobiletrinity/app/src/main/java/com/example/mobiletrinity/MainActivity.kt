@@ -41,6 +41,10 @@ class MainActivity : ComponentActivity() {
         )
         
         setContent {
+            // Use State from Repository Flow if desired, or local state for now as per original code
+            // For now, I am keeping the original logic of fetching from API directly in MainActivity 
+            // to match the user's previous pattern, but Repository is available for future refactoring.
+            
             var tasks by remember { mutableStateOf<List<Task>>(emptyList()) }
             var isLoading by remember { mutableStateOf(true) }
             var agentStatus by remember { mutableStateOf<String>("Disconnected") }
@@ -53,16 +57,28 @@ class MainActivity : ComponentActivity() {
                 lifecycleScope.launch {
                     try {
                         // ============ CHECK AGENT STATUS (Agent API) ============
-                        val agentHealth = agentApiService.checkHealth()
-                        agentStatus = if (agentHealth.connected) "Connected" else "Disconnected"
-                        agentStatusColor = if (agentHealth.connected) Color.Green else Color.Red
-                        
+                        try {
+                             val agentHealth = agentApiService.checkHealth()
+                             agentStatus = if (agentHealth.connected) "Connected" else "Disconnected"
+                             agentStatusColor = if (agentHealth.connected) Color.Green else Color.Red
+                        } catch (e: Exception) {
+                             agentStatus = "Error"
+                             agentStatusColor = Color.Yellow
+                        }
+
                         // ============ FETCH WEB SYSTEM STATS (Web API) ============
-                        val stats = webApiService.getStats()
-                        totalUsers = stats.totalUsers
-                        systemHealth = stats.systemHealth
+                        try {
+                            val stats = webApiService.getStats()
+                            totalUsers = stats.totalUsers
+                            systemHealth = stats.systemHealth
+                        } catch (e: Exception) {
+                             // Handle stats error gracefully
+                        }
                         
                         // ============ SYNC TASKS FROM WEB API ============
+                        // Using repository to sync tasks to local DB could be done here:
+                        // repository.syncTasks() 
+                        
                         val remoteTasks = webApiService.getTasks()
                         tasks = remoteTasks.map { taskDto ->
                             Task(
@@ -78,8 +94,6 @@ class MainActivity : ComponentActivity() {
                         isLoading = false
                     } catch (e: Exception) {
                         println("Error fetching system status: ${e.message}")
-                        agentStatus = "Error"
-                        agentStatusColor = Color.Yellow
                         isLoading = false
                     }
                 }
