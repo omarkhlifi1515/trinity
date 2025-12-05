@@ -105,7 +105,24 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html', page="Dashboard")
+    # Provide manager view with users, employee view with their tasks
+    if getattr(current_user, 'role', None) == 'manager':
+        users = User.query.all()
+        return render_template('dashboard.html', page="Dashboard", users=users)
+    else:
+        tasks = Task.query.order_by(Task.id.desc()).all()
+        # Task.assignees is stored as JSON list — filter in Python for portability
+        my_tasks = []
+        for t in tasks:
+            try:
+                assignees = t.assignees or []
+                # Normalize types
+                assignees_normalized = [int(a) for a in assignees if a is not None]
+                if int(current_user.id) in assignees_normalized:
+                    my_tasks.append(t)
+            except Exception:
+                continue
+        return render_template('dashboard.html', page="Dashboard", my_tasks=my_tasks)
 
 @app.route('/live-map')
 @login_required

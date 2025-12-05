@@ -11,15 +11,18 @@ def start_scheduler():
         
         while True:
             # TODO: replace with real DB checks for overdue tasks
-            # Simulated: Found a task assigned to User 2 that is overdue
-            target_user_id = 2 
+            # Simulated: Found a task assigned to user 'john_doe' that is overdue
+            assignee_username = 'john_doe'
             task_title = "Submit Daily Report"
-            
+            task_description = "Daily report missing — please submit."
+
             sio.emit('agent_push_notification', {
-                'user_id': target_user_id,
+                'username': assignee_username,
+                'title': task_title,
+                'description': task_description,
                 'message': f"Reminder: '{task_title}' is overdue. Need help?"
             })
-            
+
             time.sleep(60) # Wait 1 minute
             
     except Exception as e:

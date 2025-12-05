@@ -71,3 +71,44 @@ def handle_complete_task(data):
             }, room='role_manager')
     except Exception as e:
         print('complete_task error:', e)
+
+
+@socketio.on('agent_push_notification')
+def handle_agent_push(data):
+    """Agent sends a push (scheduler). Data may include username or user_id and message/title.
+    We'll resolve username if provided and create a Task assigned to that user.
+    """
+    try:
+        username = data.get('username') or data.get('assignee_username')
+        title = data.get('title') or data.get('message') or 'Agent Command'
+
+        assignee_id = None
+        if username:
+            user = User.query.filter_by(username=username).first()
+            if user:
+                assignee_id = user.id
+
+        # Save task
+        new_task = Task(
+            title=title,
+            description=data.get('description') or data.get('message') or '',
+            status='Pending',
+            creator_id=None,
+            assignees=[assignee_id] if assignee_id else []
+        )
+        db.session.add(new_task)
+        db.session.commit()
+
+        payload = {
+            'id': new_task.id,
+            'title': new_task.title,
+            'status': new_task.status,
+            'timestamp': datetime.now().strftime('%H:%M')
+        }
+
+        if assignee_id:
+            emit('new_task_alert', payload, room=f'user_{assignee_id}')
+        else:
+            emit('new_task_alert', payload, room='role_employee')
+    except Exception as e:
+        print('agent_push_notification error:', e)
