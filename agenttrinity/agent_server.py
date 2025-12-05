@@ -1,41 +1,48 @@
-from flask import Flask, request, jsonify
-from dotenv import load_dotenv
 import os
-from datetime import datetime
-from functools import wraps
-
-load_dotenv()
-
-from db import init_db, get_session, Task, Message, User
+from flask import Flask, request, jsonify
+from db import init_db, Task, get_session
 
 app = Flask(__name__)
 
-# Load API key from environment — fallback to insecure default if missing
+# --- CONFIGURATION ---
 AGENT_API_KEY = os.environ.get('AGENT_API_KEY')
 if not AGENT_API_KEY:
     print("⚠️ WARNING: AGENT_API_KEY not found. Using default insecure key.")
     AGENT_API_KEY = "default-insecure-key"
 
-
-def require_api_key(f):
-    """Decorator to check API key in request headers."""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Allow health endpoint without a key
-        if request.endpoint == 'health':
-            return f(*args, **kwargs)
-        # Accept both header variants
-        key = request.headers.get('X-API-KEY') or request.headers.get('X-API-Key')
-        if key != AGENT_API_KEY:
-            return jsonify({'error': 'Unauthorized'}), 401
-        return f(*args, **kwargs)
-    return decorated_function
-
-
-@app.before_first_request
-def startup():
-    # Ensure tables exist
+# --- DATABASE INIT (THE FIX) ---
+# We initialize the DB inside the app context immediately, removing 'before_first_request'
+with app.app_context():
     init_db()
+
+@app.before_request
+def require_api_key():
+    if request.endpoint == 'health':
+        return
+    if request.headers.get('X-API-KEY') != AGENT_API_KEY:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "running", "agent": "Trinity-01"})
+
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    session = get_session()
+    try:
+        tasks = session.query(Task).filter_by(status='Pending').all()
+        return jsonify([{
+            'id': t.id, 
+            'command': t.description,
+            'status': t.status
+        } for t in tasks])
+    finally:
+        session.close()
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
+
 
 
 @app.route('/health')
