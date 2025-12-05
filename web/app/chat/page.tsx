@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import AppSidebar from "../../components/AppSidebar";
+import { apiPost } from "../../lib/api";
 
 type Message = { id?: string; user_id?: string; content: string; from_bot?: boolean };
 
@@ -30,16 +31,7 @@ export default function ChatPage() {
     setMessages((m) => [...m, { content, user_id: user.id }]);
     setText("");
     try {
-      await fetch(process.env.NEXT_PUBLIC_API_URL + "/chat/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": user.id,
-          "x-user-role": user.role,
-          "x-user-department": user.department || "general",
-        },
-        body: JSON.stringify(payload),
-      });
+      await apiPost("/chat/send", payload);
       // in a real app, you'd re-sync from server or listen via websocket
     } catch (e) {
       console.error(e);

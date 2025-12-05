@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import AppSidebar from "../../components/AppSidebar";
-import { supabase } from "../../lib/supabase";
+import { apiGet } from "../../lib/api";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<{ id: string; role: string; department?: string } | null>(null);
@@ -15,22 +15,13 @@ export default function DashboardPage() {
 
     async function fetchNews() {
       try {
-        // call backend /department/news
-        const headers: Record<string, string> = {};
-        if (stored) {
-          const u = JSON.parse(stored);
-          headers["x-user-id"] = u.id;
-          headers["x-user-role"] = u.role;
-          headers["x-user-department"] = u.department || "general";
-        }
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/department/news", { headers });
-        const data = await res.json();
+        // Use apiGet to call backend /department/news with auth
+        const data = await apiGet("/department/news");
         setNews(data.news || []);
       } catch (e) {
         console.error(e);
       }
     }
-
     fetchNews();
   }, []);
 
