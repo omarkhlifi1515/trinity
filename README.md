@@ -1,6 +1,6 @@
 <div align="center">
-	<a href="https://frappe.io/hr">
-		<img src=".github/frappe-hr-logo.png" height="80px" width="80px" alt="trinity Logo">
+	<a href="https://trinity.io/hr">
+		<img src=".github/trinity-hr-logo.png" height="80px" width="80px" alt="trinity Logo">
 	</a>
 	<h2>trinity</h2>
 	<p align="center">
@@ -18,9 +18,9 @@
 </div>
 
 <div align="center">
-	<a href="https://frappe.io/hr">Website</a>
+	<a href="https://trinity.io/hr">Website</a>
 	-
-	<a href="https://docs.frappe.io/hr/introduction">Documentation</a>
+	<a href="https://docs.trinity.io/hr/introduction">Documentation</a>
 </div>
 
 ## trinity
@@ -28,8 +28,8 @@
 trinity has everything you need to drive excellence within the company. It's a complete HRMS solution with over 13 different modules right from Employee Management, Onboarding, Leaves, to Payroll, Taxation, and more!
 
 ## Motivation
-When Frappe team started growing in terms of size, we needed an open-source HR and Payroll software. We didn't find any "true" open-source HR software out there and so decided to build one ourselves.
-Initially, it was a set of modules within ERPNext but version 14 onwards, as the modules became more mature, Frappe HR was created as a separate product.
+When the team started growing in terms of size, we needed an open-source HR and Payroll software. We didn't find any "true" open-source HR software out there and so decided to build one ourselves.
+Initially, it was a set of modules within ERPNext but version 14 onwards, as the modules became more mature, Trinity HR was created as a separate product.
 
 ## Key Features
 
@@ -52,20 +52,20 @@ Initially, it was a set of modules within ERPNext but version 14 onwards, as the
 
 ### Under the Hood
 
-- [**Frappe Framework**](https://github.com/frappe/frappe): A full-stack web application framework written in Python and Javascript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
+- [**Trinity Framework**](https://github.com/trinity/trinity): A full-stack web application framework written in Python and Javascript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
 
-- [**Frappe UI**](https://github.com/frappe/frappe-ui): A Vue-based UI library, to provide a modern user interface. The Frappe UI library provides a variety of components that can be used to build single-page applications on top of the Frappe Framework.
+- [**Trinity UI**](https://github.com/trinity/trinity-ui): A Vue-based UI library, to provide a modern user interface. The Trinity UI library provides a variety of components that can be used to build single-page applications on top of the Trinity Framework.
 
 ## Production Setup
 
 ### Managed Hosting
 
-You can try [Frappe Cloud](https://frappecloud.com), a simple, user-friendly and sophisticated [open-source](https://github.com/frappe/press) platform to host Frappe applications with peace of mind.
+You can try [Trinity Cloud](https://trinitycloud.com), a simple, user-friendly and sophisticated [open-source](https://github.com/trinity/press) platform to host Trinity applications with peace of mind.
 
 It takes care of installation, setup, upgrades, monitoring, maintenance and support of your Frappe deployments. It is a fully featured developer platform with an ability to manage and control multiple Frappe deployments.
 
 <div>
-	<a href="https://frappecloud.com/hrms/signup" target="_blank">
+	<a href="https://trinitycloud.com/hrms/signup" target="_blank">
 		<picture>
 			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
 			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
@@ -108,8 +108,8 @@ Use the following credentials to log in:
 
 ## Learning and Community
 
-1. [Frappe School](https://frappe.school) - Learn Frappe Framework and ERPNext from the various courses by the maintainers or from the community.
-2. [Documentation](https://docs.frappe.io/hr) - Extensive documentation for Frappe HR.
+1. [Trinity School](https://trinity.school) - Learn Trinity Framework and ERPNext from the various courses by the maintainers or from the community.
+2. [Documentation](https://docs.trinity.io/hr) - Extensive documentation for Trinity HR.
 3. [User Forum](https://discuss.erpnext.com/) - Engage with the community of ERPNext users and service providers.
 4. [Telegram Group](https://t.me/frappehr) - Get instant help from the community of users.
 
@@ -128,10 +128,10 @@ Please read our [Logo and Trademark Policy](TRADEMARK_POLICY.md).
 <br />
 <br />
 <div align="center" style="padding-top: 0.75rem;">
-	<a href="https://frappe.io" target="_blank">
+	<a href="https://trinity.io" target="_blank">
 		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/Frappe-white.png">
-			<img src="https://frappe.io/files/Frappe-black.png" alt="Frappe Technologies" height="28"/>
+			<source media="(prefers-color-scheme: dark)" srcset="https://trinity.io/files/Trinity-white.png">
+			<img src="https://trinity.io/files/Trinity-black.png" alt="Trinity Technologies" height="28"/>
 		</picture>
 	</a>
 </div>

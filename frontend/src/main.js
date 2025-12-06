@@ -7,10 +7,10 @@ import {
 	Button,
 	Input,
 	setConfig,
-	frappeRequest,
+	trinityRequest,
 	resourcesPlugin,
 	FormControl,
-} from "frappe-ui"
+} from "trinity-ui"
 import { translationsPlugin } from "./plugins/translationsPlugin.js"
 import EmptyState from "@/components/EmptyState.vue"
 
@@ -23,7 +23,7 @@ import { employeeResource } from "@/data/employee"
 import dayjs from "@/utils/dayjs"
 import getIonicConfig from "@/utils/ionicConfig"
 
-import FrappePushNotification from "../public/frappe-push-notification"
+import TrinityPushNotification from "../public/trinity-push-notification"
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/vue/css/core.css"
@@ -36,7 +36,7 @@ import "./main.css"
 const app = createApp(App)
 const socket = initSocket()
 
-setConfig("resourceFetcher", frappeRequest)
+setConfig("resourceFetcher", trinityRequest)
 app.use(resourcesPlugin)
 app.use(translationsPlugin)
 
@@ -59,14 +59,14 @@ app.provide("$socket", socket)
 app.provide("$dayjs", dayjs)
 
 const registerServiceWorker = async () => {
-	window.frappePushNotification = new FrappePushNotification("hrms")
+	window.trinityPushNotification = new TrinityPushNotification("hrms")
 
 	if ("serviceWorker" in navigator) {
 		let serviceWorkerURL = "/assets/hrms/frontend/sw.js"
 		let config = ""
 
 		try {
-			config = await window.frappePushNotification.fetchWebConfig()
+			config = await window.trinityPushNotification.fetchWebConfig()
 			serviceWorkerURL = `${serviceWorkerURL}?config=${encodeURIComponent(
 				JSON.stringify(config)
 			)}`
@@ -80,10 +80,10 @@ const registerServiceWorker = async () => {
 			})
 			.then((registration) => {
 				if (config) {
-					window.frappePushNotification.initialize(registration).then(() => {
-						console.log("Frappe Push Notification initialized")
-					})
-				}
+						window.trinityPushNotification.initialize(registration).then(() => {
+							console.log("Trinity Push Notification initialized")
+						})
+					}
 			})
 			.catch((err) => {
 				console.error("Failed to register service worker", err)
@@ -95,11 +95,11 @@ const registerServiceWorker = async () => {
 
 router.isReady().then(async () => {
 	if (import.meta.env.DEV) {
-		await frappeRequest({
+		await trinityRequest({
 			url: "/api/method/hrms.www.hrms.get_context_for_dev",
 		}).then(async (values) => {
-			if (!window.frappe) window.frappe = {}
-			window.frappe.boot = values
+			if (!window.trinity) window.trinity = {}
+			window.trinity.boot = values
 		})
 	}
 

@@ -7,7 +7,7 @@ Usage (run in repo root with elevated privileges if needed):
 What it does:
 - Detects whether `docker compose` or `docker-compose` is available
 - Brings up services from `docker/docker-compose.yml`
-- Waits for the frappe container to appear and runs `/workspace/init.sh` inside it
+- Waits for the trinity container to appear and runs `/workspace/init.sh` inside it
 - Prints next commands to start the bench and frontend if you want to run them interactively
 
 Notes:
@@ -45,18 +45,18 @@ try {
         exit 1
     }
 
-    Write-Header "Waiting for frappe container"
+    Write-Header "Waiting for trinity container"
     $containerName = $null
     for ($i=0; $i -lt 60; $i++) {
-        # try to find a container that uses the frappe bench image or has 'frappe' in its name
-        $names = & docker ps --format '{{.Names}}' | Where-Object { $_ -match 'frappe' }
+        # try to find a container that uses the trinity bench image or has 'trinity' in its name
+        $names = & docker ps --format '{{.Names}}' | Where-Object { $_ -match 'trinity' }
         if ($names) { $containerName = $names[0]; break }
         Start-Sleep -Seconds 2
         Write-Host -NoNewline '.'
     }
 
     if (-not $containerName) {
-        Write-Error "Could not find the frappe container after waiting. Check 'docker ps' for running containers."
+        Write-Error "Could not find the trinity container after waiting. Check 'docker ps' for running containers."
         exit 1
     }
 
@@ -69,7 +69,7 @@ try {
     Write-Host "  docker exec -it $containerName bash -c 'bench start'" -ForegroundColor Yellow
 
     Write-Host "Or use docker compose exec to open a shell in the container:"
-    Write-Host "  $composeCmd exec frappe bash" -ForegroundColor Yellow
+    Write-Host "  $composeCmd exec trinity bash" -ForegroundColor Yellow
 
     Write-Host "Frontend dev (on your host):" -ForegroundColor Green
     Write-Host "  cd frontend" -ForegroundColor Yellow

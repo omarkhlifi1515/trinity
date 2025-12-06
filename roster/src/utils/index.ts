@@ -1,4 +1,4 @@
-import { toast } from "frappe-ui";
+import { toast } from "trinity-ui";
 
 export { default as dayjs } from "./dayjs";
 

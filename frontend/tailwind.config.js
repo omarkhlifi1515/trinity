@@ -1,11 +1,11 @@
-import frappeUIPreset from "frappe-ui/src/tailwind/preset"
+import trinityUIPreset from "trinity-ui/src/tailwind/preset"
 export default {
-	presets: [frappeUIPreset],
+	presets: [trinityUIPreset],
 	content: [
 		"./index.html",
 		"./src/**/*.{vue,js,ts,jsx,tsx}",
-		"./node_modules/frappe-ui/src/components/**/*.{vue,js,ts,jsx,tsx}",
-		"../node_modules/frappe-ui/src/components/**/*.{vue,js,ts,jsx,tsx}",
+		"./node_modules/trinity-ui/src/components/**/*.{vue,js,ts,jsx,tsx}",
+		"../node_modules/trinity-ui/src/components/**/*.{vue,js,ts,jsx,tsx}",
 	],
 	theme: {
 		extend: {

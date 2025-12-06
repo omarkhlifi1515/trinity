@@ -11,13 +11,13 @@
 import { onMounted } from "vue"
 import { IonApp, IonRouterOutlet } from "@ionic/vue"
 
-import { Toasts } from "frappe-ui"
+import { Toasts } from "trinity-ui"
 
 import InstallPrompt from "@/components/InstallPrompt.vue"
 import { showNotification } from "@/utils/pushNotifications"
 
 onMounted(() => {
-	window?.frappePushNotification?.onMessage((payload) => {
+	window?.trinityPushNotification?.onMessage((payload) => {
 		showNotification(payload)
 	})
 })

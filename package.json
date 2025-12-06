@@ -1,18 +1,18 @@
 {
   "private": true,
   "name": "trinity",
-  "description": "trinity server - Open Source HR & Payroll System powered by the Frappe Framework",
+  "description": "trinity server - Open Source HR & Payroll System powered by the Trinity Framework",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/omarkhlifi1515/trinity.git"
   },
-  "homepage": "https://frappe.io/hr",
+  "homepage": "https://trinity.io/hr",
   "author": "trinity",
   "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/omarkhlifi1515/trinity/issues"
   },
-  "aworkspaces": ["frontend", "roster", "frappe-ui"],
+  "aworkspaces": ["frontend", "roster", "trinity-ui"],
   "scripts": {
     "postinstall": "yarn install-pwa-deps && yarn install-roster-deps",
     "install-pwa-deps": "cd frontend && yarn install --check-files",

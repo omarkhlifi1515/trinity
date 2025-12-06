@@ -1,1 +1,1 @@
-declare module "frappe-ui";
+declare module "trinity-ui";

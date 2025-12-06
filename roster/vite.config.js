@@ -25,7 +25,7 @@ export default defineConfig({
 	},
 	optimizeDeps: {
 		include: [
-			"frappe-ui > feather-icons",
+			"trinity-ui > feather-icons",
 			"showdown",
 			"tailwind.config.js",
 			"engine.io-client",
@@ -54,7 +54,7 @@ function getProxyOptions() {
 
 function getCommonSiteConfig() {
 	let currentDir = path.resolve(".");
-	// traverse up till we find frappe-bench with sites directory
+	// traverse up till we find trinity-bench with sites directory
 	while (currentDir !== "/") {
 		if (
 			fs.existsSync(path.join(currentDir, "sites")) &&
