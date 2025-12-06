@@ -1,0 +1,32 @@
+PROJECT TRINITY (V2 - ENTERPRISE EDITION) SUMMARY
+
+1. PROJECT OVERVIEW
+Project Trinity has evolved into a monolithic Enterprise Hub designed to centralize company operations. It serves as a unified platform where employees, managers (Chefs), and administrators can manage tasks, communication, and company news. The core philosophy is "Hybrid Intelligence," combining a custom-built User Interface (Web and Mobile) with a powerful external Automation Engine (n8n) that handles complex logic and AI interactions.
+
+2. ARCHITECTURE AND TECH STACK
+The project is built on a scalable, modular architecture consisting of five key components:
+
+- Backend: Built with Python FastAPI. It acts as the central traffic controller, managing API requests, authentication, database connections, and routing complex tasks to the automation engine.
+- Database: Hosted on Supabase (PostgreSQL). It serves as the single source of truth for Users, Tasks, Chat History, News, and Payslip metadata.
+- Web Application: Developed using Next.js 14 and Tailwind CSS. This provides the primary dashboard for users on desktop devices, featuring a modern dark mode design and role-based navigation.
+- Mobile Application: Planned using React Native (Expo). It will mirror the web application's features, providing native access on Android and iOS devices.
+- Automation Engine: Powered by n8n. This acts as the system's "Brain," handling AI Chat responses, fetching external news, and managing email notifications.
+
+3. KEY FEATURES BY MODULE
+
+A. The Backend
+The backend enforces Role-Based Access Control (RBAC). Users are assigned roles such as 'employee', 'chef', or 'admin', restricting access to specific endpoints like task assignment or user management. It features a sophisticated Chat System that acts as a bridge to n8n. Messages addressed to the bot are forwarded to a webhook, and replies from the automation engine are received via a webhook callback and saved to the database. Additionally, it serves Department News by accepting updates pushed from n8n and serving them to the frontend.
+
+B. The Web Dashboard
+The web interface features a dynamic sidebar that adapts based on the logged-in user's role. Employees see options for Chat, Profile, News, Tasks, and Payslips. Chefs (Managers) have access to Team Management, Task Assignment, and Payslip Uploads. Administrators can manage users and department configurations. The Dashboard Page displays real-time department news, and the Chat Page offers a real-time messaging interface that polls for history and integrates with the AI bot.
+
+C. Automation (n8n)
+The automation layer includes an AI Agent capable of parsing natural language to execute specific actions, such as requesting holidays or sending emails, rather than just generating text responses. It also includes a News Aggregator workflow scheduled to fetch technology news every morning and push it to the Trinity database.
+
+4. DATA MODELS
+The Supabase database schema supports the entire application lifecycle:
+- Users: Extends standard authentication with role and department fields.
+- Chat Messages: Stores the conversation history between users and the Trinity Bot.
+- Department News: Stores news articles tagged by department.
+- Tasks: Tracks task assignments, linking creators (Chefs) to assignees (Employees) with status tracking.
+- Payslips: Stores metadata for uploaded files, linking them to specific users and storage paths.
