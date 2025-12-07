@@ -1,138 +1,63 @@
-<div align="center">
-	<a href="https://trinity.io/hr">
-		<img src=".github/trinity-hr-logo.png" height="80px" width="80px" alt="trinity Logo">
-	</a>
-	<h2>trinity</h2>
-	<p align="center">
-		<p>Open Source, modern, and easy-to-use HR and Payroll Software</p>
-	</p>
+# 🇰🇪 Kenyan HRM System (Open Source)
 
-[![CI](https://github.com/omarkhlifi1515/trinity/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/omarkhlifi1515/trinity/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/omarkhlifi1515/trinity/branch/develop/graph/badge.svg?token=0TwvyUg3I5)](https://codecov.io/gh/omarkhlifi1515/trinity)
+A modern, Laravel + FilamentPHP-based **Human Resource Management System** tailored for Kenyan businesses. This solution simplifies employee management, payroll (PAYE, NHIF, NSSF), attendance, and more — all in compliance with Kenyan labor laws.
 
-<a href="https://trendshift.io/repositories/10972" target="_blank"><img src="https://trendshift.io/api/badge/repositories/10972" alt="frappe%2Fhrms | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-</div>
+<img src="img.png" alt="Open source HRM" style="max-width: 100%; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);" >
 
-<div align="center">
-	<img src=".github/trinity-hero.png"/>
-</div>
+---
 
-<div align="center">
-	<a href="https://trinity.io/hr">Website</a>
-	-
-	<a href="https://docs.trinity.io/hr/introduction">Documentation</a>
-</div>
+## 🔧 Tech Stack
 
-## trinity
+-   **Laravel 12+**
+-   **FilamentPHP 3.x** (admin panel)
+-   **MySQL/MariaDB** (database)
+-   **PHP 8.2+**
+-   **Tailwind CSS** (via Filament)
+-   **Alpine.js** (via Filament)
 
-trinity has everything you need to drive excellence within the company. It's a complete HRMS solution with over 13 different modules right from Employee Management, Onboarding, Leaves, to Payroll, Taxation, and more!
+---
 
-## Motivation
-When the team started growing in terms of size, we needed an open-source HR and Payroll software. We didn't find any "true" open-source HR software out there and so decided to build one ourselves.
-Initially, it was a set of modules within ERPNext but version 14 onwards, as the modules became more mature, Trinity HR was created as a separate product.
+## 🚀 Features
 
-## Key Features
+### ✅ Core Modules
 
-- **Employee Lifecycle**: From onboarding employees, managing promotions and transfers, all the way to documenting feedback with exit interviews, make life easier for employees throughout their life cycle.
-- **Leave and Attendance**: Configure leave policies, pull regional holidays with a click, check-in and check-out with geolocation capturing, track leave balances and attendance with reports.
-- **Expense Claims and Advances**: Manage employee advances, claim expenses, configure multi-level approval workflows, all this with seamless integration with ERPNext accounting.
-- **Performance Management**: Track goals, align goals with key result areas (KRAs), enable employees to evaluate themselves, make managing appraisal cycles easy.
-- **Payroll & Taxation**: Create salary structures, configure income tax slabs, run standard payroll, accomodate additional salaries and off cycle payments, view income breakup on salary slips and so much more.
-- **trinity Mobile App**: Apply for and approve leaves on the go, check-in and check-out, access employee profile right from the mobile app.
+-   **Employee Records** (with KRA PIN, NSSF, NHIF, etc.)
+-   **Departments**
+-   **Attendance**
+-   **Leave**
+-   **Payroll**
+-   **Tasks board**
+-   **Employee portal** (/portal)
+-   **Calendar**
+-   **Kanban page**
+-   **Internal messaging**
+-   _More modules coming soon_  
+     ( Recruitment, Training, etc.)
 
-<details open>
+## ⚙️ Installation
 
-<summary>View Screenshots</summary>
-	<img src=".github/trinity-appraisal.png"/>
-	<img src=".github/trinity-requisition.png"/>
-	<img src=".github/trinity-attendance.png"/>
-	<img src=".github/trinity-salary.png"/>
-	<img src=".github/trinity-pwa.png"/>
-</details>
+```bash
+git clone https://github.com/michaelnjuguna/open-source-hrm.git
+cd open-source-hrm
 
-### Under the Hood
+composer install
+cp .env.example .env
+php artisan key:generate
 
-- [**Trinity Framework**](https://github.com/trinity/trinity): A full-stack web application framework written in Python and Javascript. The framework provides a robust foundation for building web applications, including a database abstraction layer, user authentication, and a REST API.
+# Setup DB credentials in .env
+php artisan migrate --seed
 
-- [**Trinity UI**](https://github.com/trinity/trinity-ui): A Vue-based UI library, to provide a modern user interface. The Trinity UI library provides a variety of components that can be used to build single-page applications on top of the Trinity Framework.
+composer run dev
+```
 
-## Production Setup
+## 🤝 Contributing
 
-### Managed Hosting
+All contributions are welcome. Please fork the repo, create a feature branch and submit a pull request.
 
-You can try [Trinity Cloud](https://trinitycloud.com), a simple, user-friendly and sophisticated [open-source](https://github.com/trinity/press) platform to host Trinity applications with peace of mind.
+This project is actively maintained. All changes and new features are merged into the `main` branch every Friday. Contributors are encouraged to submit pull requests for review before this weekly merge.
 
-It takes care of installation, setup, upgrades, monitoring, maintenance and support of your Frappe deployments. It is a fully featured developer platform with an ability to manage and control multiple Frappe deployments.
+## 📜 License
 
-<div>
-	<a href="https://trinitycloud.com/hrms/signup" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://frappe.io/files/try-on-fc-white.png">
-			<img src="https://frappe.io/files/try-on-fc-black.png" alt="Try on Frappe Cloud" height="28" />
-		</picture>
-	</a>
-</div>
+[MIT license](LICENSE)
 
-
-## Development setup
-### Docker
-You need Docker, docker-compose and git setup on your machine. Refer [Docker documentation](https://docs.docker.com/). After that, run the following commands:
-	```
-	git clone https://github.com/omarkhlifi1515/trinity
-	cd trinity/docker
-	docker-compose up
-	```
-
-Wait for some time until the setup script creates a site. After that you can access `http://localhost:8000` in your browser and the login screen for HR should show up.
-
-Use the following credentials to log in:
-
-- Username: `Administrator`
-- Password: `admin`
-
-### Local
-
-1. Set up bench by following the [Installation Steps](https://frappeframework.com/docs/user/en/installation) and start the server and keep it running
-	```sh
-	$ bench start
-	```
-2. In a separate terminal window, run the following commands
-	```sh
-	$ bench new-site trinity.local
-	$ bench get-app erpnext
-	$ bench get-app trinity
-	$ bench --site trinity.local install-app trinity
-	$ bench --site trinity.local add-to-hosts
-	```
-3. You can access the site at `http://trinity.local:8080`
-
-## Learning and Community
-
-1. [Trinity School](https://trinity.school) - Learn Trinity Framework and ERPNext from the various courses by the maintainers or from the community.
-2. [Documentation](https://docs.trinity.io/hr) - Extensive documentation for Trinity HR.
-3. [User Forum](https://discuss.erpnext.com/) - Engage with the community of ERPNext users and service providers.
-4. [Telegram Group](https://t.me/frappehr) - Get instant help from the community of users.
-
-
-## Contributing
-
-1. [Issue Guidelines](https://github.com/frappe/erpnext/wiki/Issue-Guidelines)
-1. [Report Security Vulnerabilities](https://erpnext.com/security)
-1. [Pull Request Requirements](https://github.com/frappe/erpnext/wiki/Contribution-Guidelines)
-
-
-## Logo and Trademark Policy
-
-Please read our [Logo and Trademark Policy](TRADEMARK_POLICY.md).
-
-<br />
-<br />
-<div align="center" style="padding-top: 0.75rem;">
-	<a href="https://trinity.io" target="_blank">
-		<picture>
-			<source media="(prefers-color-scheme: dark)" srcset="https://trinity.io/files/Trinity-white.png">
-			<img src="https://trinity.io/files/Trinity-black.png" alt="Trinity Technologies" height="28"/>
-		</picture>
-	</a>
-</div>
-
+Made with ❤️

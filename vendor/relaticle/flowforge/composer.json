@@ -1,0 +1,83 @@
+{
+    "name": "relaticle/flowforge",
+    "description": "Flowforge is a lightweight Kanban board package for Filament that works with existing Eloquent models.",
+    "keywords": [
+        "Relaticle",
+        "laravel",
+        "flowforge"
+    ],
+    "homepage": "https://github.com/relaticle/flowforge",
+    "support": {
+        "issues": "https://github.com/relaticle/flowforge/issues",
+        "source": "https://github.com/relaticle/flowforge"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "manukminasyan",
+            "email": "manuk.minasyan1@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "filament/filament": "^4.0",
+        "spatie/laravel-package-tools": "^1.15.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0",
+        "nunomaduro/collision": "^8.0",
+        "orchestra/testbench": "^9.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-arch": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "pestphp/pest-plugin-livewire": "^4.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "spatie/laravel-ray": "^1.26"
+    },
+    "autoload": {
+        "psr-4": {
+            "Relaticle\\Flowforge\\": "src/",
+            "Relaticle\\Flowforge\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Relaticle\\Flowforge\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
+        "analyse": "vendor/bin/phpstan analyse",
+        "pest": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "pint": "vendor/bin/pint",
+        "test": [
+            "@pint",
+            "@analyse",
+            "@pest"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Relaticle\\Flowforge\\FlowforgeServiceProvider"
+            ],
+            "aliases": {
+                "Flowforge": "Relaticle\\Flowforge\\Facades\\Flowforge"
+            }
+        }
+    },
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}

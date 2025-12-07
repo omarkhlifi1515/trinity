@@ -1,29 +1,16 @@
 {
-  "private": true,
-  "name": "trinity",
-  "description": "trinity server - Open Source HR & Payroll System powered by the Trinity Framework",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/omarkhlifi1515/trinity.git"
-  },
-  "homepage": "https://trinity.io/hr",
-  "author": "trinity",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/omarkhlifi1515/trinity/issues"
-  },
-  "aworkspaces": ["frontend", "roster", "trinity-ui"],
-  "scripts": {
-    "postinstall": "yarn install-pwa-deps && yarn install-roster-deps",
-    "install-pwa-deps": "cd frontend && yarn install --check-files",
-    "install-roster-deps": "cd roster && yarn install --check-files",
-    "dev-pwa": "cd frontend && yarn dev",
-    "dev-roster": "cd roster && yarn dev",
-    "build": "yarn build-pwa && yarn build-roster",
-    "build-pwa": "cd frontend && yarn build",
-    "build-roster": "cd roster && yarn build"
-  },
-  "dependencies": {
-    "html2canvas": "^1.4.1"
-  }
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.1.14",
+        "axios": "^1.8.2",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^1.2.0",
+        "tailwindcss": "^4.1.14",
+        "vite": "^6.2.4"
+    }
 }
