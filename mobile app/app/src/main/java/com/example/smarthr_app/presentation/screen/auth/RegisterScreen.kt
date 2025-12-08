@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -66,7 +66,6 @@ import com.example.smarthr_app.presentation.theme.SecondaryPurple
 import com.example.smarthr_app.presentation.viewmodel.AuthViewModel
 import com.example.smarthr_app.utils.Resource
 import com.example.smarthr_app.utils.ToastHelper
-import com.example.smarthr_app.utils.ValidationResult
 import com.example.smarthr_app.utils.ValidationUtils
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -138,7 +137,8 @@ fun RegisterScreen(
                     ToastHelper.showSuccessToast(context, "Account created successfully!")
                 }
                 delay(500)
-                if (currentState.data.user.role == "ROLE_HR") {
+                // Fixed: Access role directly from UserDto (currentState.data is UserDto)
+                if (currentState.data.role == "ROLE_HR") {
                     onNavigateToHRDashboard()
                 } else {
                     onNavigateToEmployeeDashboard()
@@ -173,6 +173,7 @@ fun RegisterScreen(
                     ToastHelper.showSuccessToast(context, "SignUp successful!")
                 }
                 delay(500)
+                // Access user role from AuthResponse (currentState.data is AuthResponse)
                 if (currentState.data.user.role == "ROLE_HR") {
                     onNavigateToHRDashboard()
                 } else {
@@ -277,7 +278,7 @@ fun RegisterScreen(
             ) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Fixed deprecation
                         contentDescription = "Back",
                         tint = Color.White
                     )

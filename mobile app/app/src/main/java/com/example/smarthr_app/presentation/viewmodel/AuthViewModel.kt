@@ -3,7 +3,9 @@ package com.example.smarthr_app.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smarthr_app.data.model.AuthResponse
+import com.example.smarthr_app.data.model.GoogleSignUpRequest
 import com.example.smarthr_app.data.model.LoginRequest
+import com.example.smarthr_app.data.model.UserDto
 import com.example.smarthr_app.data.model.UserRegisterRequest
 import com.example.smarthr_app.data.repository.AuthRepository
 import com.example.smarthr_app.utils.Resource
@@ -16,8 +18,11 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _loginState = MutableStateFlow<Resource<AuthResponse>?>(null)
     val loginState: StateFlow<Resource<AuthResponse>?> = _loginState
 
-    private val _registerState = MutableStateFlow<Resource<Any>?>(null)
-    val registerState: StateFlow<Resource<Any>?> = _registerState
+    private val _registerState = MutableStateFlow<Resource<UserDto>?>(null)
+    val registerState: StateFlow<Resource<UserDto>?> = _registerState
+
+    private val _googleSignUpAuthState = MutableStateFlow<Resource<AuthResponse>?>(null)
+    val googleSignUpAuthState: StateFlow<Resource<AuthResponse>?> = _googleSignUpAuthState
 
     fun login(request: LoginRequest) {
         viewModelScope.launch {
@@ -26,22 +31,25 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
     }
 
-    fun register(request: UserRegisterRequest) {
+    fun registerUser(request: UserRegisterRequest) {
         viewModelScope.launch {
             _registerState.value = Resource.Loading()
-            val result = repository.register(request)
-            // Map UserDto result to Any for simpler state handling if needed, or keep generic
-            if (result is Resource.Success) {
-                _registerState.value = Resource.Success(result.data!!)
-            } else {
-                _registerState.value = Resource.Error(result.message ?: "Error")
-            }
+            _registerState.value = repository.register(request)
         }
     }
 
-    fun logout() {
+    fun signUpWithGoogle(request: GoogleSignUpRequest) {
         viewModelScope.launch {
-            repository.logout()
+            _googleSignUpAuthState.value = Resource.Loading()
+            _googleSignUpAuthState.value = repository.signUpWithGoogle(request)
         }
+    }
+
+    fun clearRegisterState() {
+        _registerState.value = null
+    }
+
+    fun clearAuthState() {
+        _googleSignUpAuthState.value = null
     }
 }

@@ -22,14 +22,11 @@ import com.example.smarthr_app.presentation.screen.auth.RoleSelectionScreen
 import com.example.smarthr_app.presentation.screen.chat.AllUserListScreen
 import com.example.smarthr_app.presentation.screen.chat.ChatListScreen
 import com.example.smarthr_app.presentation.screen.chat.ChatScreen
-import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeAttendanceScreen
 import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeCompanyManagementScreen
 import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeDashboardScreen
-import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeLeaveScreen
 import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeMeetingScreen
 import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeProfileScreen
 import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeTaskDetailScreen
-import com.example.smarthr_app.presentation.screen.dashboard.employee.EmployeeTaskScreen
 import com.example.smarthr_app.presentation.screen.dashboard.hr.CreateMeetingScreen
 import com.example.smarthr_app.presentation.screen.dashboard.hr.CreateTaskScreen
 import com.example.smarthr_app.presentation.screen.dashboard.hr.EmployeeManagementScreen

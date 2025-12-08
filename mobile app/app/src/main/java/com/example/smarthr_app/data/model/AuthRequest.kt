@@ -86,3 +86,6 @@ enum class Gender {
     M, F
 }
 
+enum class UserRole {
+    ROLE_HR, ROLE_USER
+}
