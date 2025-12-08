@@ -66,7 +66,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 }
 
 @Composable
@@ -76,11 +75,11 @@ fun SmartHRApp() {
     val dataStoreManager = DataStoreManager(context)
     val authRepository = AuthRepository(dataStoreManager)
     val chatRepository = ChatRepository(dataStoreManager)
+    // You might need to add a factory for ViewModel if it fails, but default often works
     val authViewModel: AuthViewModel = viewModel { AuthViewModel(authRepository) }
     val chatViewModel : ChatViewModel = viewModel { ChatViewModel(chatRepository) }
     var startDestination by remember { mutableStateOf<String?>(null) }
     var isInitialized by remember { mutableStateOf(false) }
-
 
     val notificationEvent by chatViewModel.notificationEvent.collectAsState()
 
@@ -88,34 +87,33 @@ fun SmartHRApp() {
     LaunchedEffect(notificationEvent) {
         notificationEvent?.let { (title, message) ->
             showNotification(context, title, message)
-            chatViewModel.clearNotificationEvent() // prevent repeat
+            chatViewModel.clearNotificationEvent()
         }
     }
 
-    // Determine start destination based on auth state with delay to check persistence
+    // Determine start destination
     LaunchedEffect(Unit) {
-        // Add small delay to ensure DataStore is properly loaded
-        delay(100)
+        delay(100) // Allow DataStore to load
 
         authRepository.isLoggedIn.collect { isLoggedIn ->
             if (isLoggedIn) {
                 authRepository.user.collect { user ->
-                    startDestination = when (user?.role) {
-                        com.example.smarthr_app.data.model.UserRole.ROLE_HR -> Screen.HRDashboard.route
-                        com.example.smarthr_app.data.model.UserRole.ROLE_USER -> Screen.EmployeeDashboard.route
-                        else -> Screen.RoleSelection.route
+                    // CHANGED: Logic to handle String roles instead of Enum
+                    startDestination = if (user?.role == "HR" || user?.role == "Admin") {
+                        Screen.HRDashboard.route
+                    } else {
+                        // Default to Employee Dashboard for everyone else
+                        Screen.EmployeeDashboard.route
                     }
                     isInitialized = true
-                    return@collect
                 }
             } else {
-                startDestination = Screen.RoleSelection.route
+                startDestination = Screen.Login.route // Go straight to Login, skip Role Selection
                 isInitialized = true
             }
         }
     }
 
-    // Only show NavGraph after determining the correct start destination
     if (isInitialized && startDestination != null) {
         NavGraph(
             navController = navController,

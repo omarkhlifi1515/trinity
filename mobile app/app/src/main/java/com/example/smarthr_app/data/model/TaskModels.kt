@@ -1,79 +1,33 @@
 package com.example.smarthr_app.data.model
 
-
-data class TaskRequest(
-    val title: String,
-    val description: String,
-    val priority: String,
-    val status: String? = null,
-    val employees: List<String>
-)
-
-data class UpdateTaskStatusRequest(
-    val status: String
-)
-
-data class EmployeeTaskInfo(
-    val id: String,
-    val name: String,
-    val email: String,
-    val imageUrl: String?,
-    val taskStatus: TaskStatus? = null // Employee's individual status for this task
-)
+import com.google.gson.annotations.SerializedName
 
 data class TaskResponse(
-    val id: String,
-    val imageUrl: String?,
-    val companyCode: String,
-    val title: String,
-    val description: String,
-    val createdAt: String,
-    val updatedAt: String,
-    val priority: TaskPriority,
-    val status: TaskStatus,
-    val assignee: UserInfo, // HR who created the task
-    val employees: List<EmployeeTaskInfo>? = null // Employees with their individual status
+    @SerializedName("id") val id: Int,
+    @SerializedName("name") val title: String, // Laravel column is 'name'
+    @SerializedName("description") val description: String?,
+    @SerializedName("status") val status: String, // 'pending', 'in_progress', 'completed'
+    @SerializedName("priority") val priority: String, // 'low', 'medium', 'high'
+    @SerializedName("due_date") val dueDate: String?,
+    @SerializedName("created_at") val createdAt: String?,
+    // Relationships (if loaded by Laravel)
+    @SerializedName("assignee") val assignee: UserInfo? = null
 )
 
+data class TaskRequest(
+    @SerializedName("name") val title: String,
+    @SerializedName("description") val description: String,
+    @SerializedName("priority") val priority: String,
+    @SerializedName("due_date") val dueDate: String?,
+    @SerializedName("assignee_id") val assigneeId: Int?
+)
+
+// Used for updating status (Drag and Drop in Kanban)
+data class UpdateTaskStatusRequest(
+    @SerializedName("status") val status: String
+)
+
+// Simplified response for lists
 data class TaskFullDetailResponse(
-    val id: String,
-    val imageUrl: String?,
-    val companyCode: String,
-    val title: String,
-    val description: String,
-    val createdAt: String,
-    val updatedAt: String,
-    val priority: TaskPriority,
-    val status: TaskStatus,
-    val assignee: UserInfo,
-    val employees: List<EmployeeTaskInfo>
+    @SerializedName("data") val task: TaskResponse
 )
-
-data class CommentRequest(
-    val taskId: String,
-    val text: String
-)
-
-data class CommentResponse(
-    val id: String,
-    val taskId: String,
-    val text: String,
-    val createdAt: String,
-    val updatedAt: String,
-    val author: UserInfo
-)
-
-data class UserInfo(
-    val id: String,
-    val name: String,
-    val email: String,
-    val imageUrl: String?
-)
-
-enum class TaskPriority {
-    LOW, MEDIUM, HIGH, URGENT
-}
-
-enum class TaskStatus {
-    NOT_STARTED, IN_PROGRESS, FINISHED
-}

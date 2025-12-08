@@ -50,7 +50,8 @@ interface ApiService {
     @POST("users")
     suspend fun registerUser(@Body request: UserRegisterRequest): Response<UserDto>
 
-    @POST("auth/login")
+    // CHANGED: "auth/login" -> "login" to match standard Laravel API
+    @POST("login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
     @POST("auth/googleLogin")
@@ -122,9 +123,8 @@ interface ApiService {
         @Part("priority") priority: RequestBody,
         @Part employees: List<MultipartBody.Part>,
         @Part image: MultipartBody.Part?
-    ): Response<TaskResponse> // Changed from TaskFullDetailResponse
+    ): Response<TaskResponse>
 
-    // Alternative method for when no employees are selected
     @Multipart
     @POST("tasks")
     suspend fun createTaskWithoutEmployees(
@@ -133,7 +133,7 @@ interface ApiService {
         @Part("description") description: RequestBody,
         @Part("priority") priority: RequestBody,
         @Part image: MultipartBody.Part?
-    ): Response<TaskResponse> // Changed from TaskFullDetailResponse
+    ): Response<TaskResponse>
 
     @GET("tasks/{id}")
     suspend fun getTaskById(
@@ -255,7 +255,7 @@ interface ApiService {
     @GET("attendances/company")
     suspend fun getCompanyAttendanceByDate(
         @Header("Authorization") token: String,
-        @Query("date") date: String? = null  // Optional date parameter, defaults to today
+        @Query("date") date: String? = null
     ): Response<List<AttendanceResponseDto>>
 
     @GET("chats/myChats")
@@ -318,7 +318,30 @@ interface ApiService {
     suspend fun respondToMeeting(
         @Header("Authorization") token: String,
         @Path("id") meetingId: String,
-        @Query("status") status: String // "ACCEPTED" or "DECLINED"
+        @Query("status") status: String
     ): Response<SuccessApiResponseMessage>
 
+    // --- NEW AI CHAT ENDPOINTS (Added for Laravel Fusion) ---
+
+    // 1. Start a new AI Thread
+    @POST("chat/start")
+    suspend fun startAiChat(
+        @Header("Authorization") token: String,
+        @Body request: Map<String, String> // Sends {"subject": "..."}
+    ): Response<Map<String, Int>> // Returns {"thread_id": 1}
+
+    // 2. Send Message to AI
+    @POST("chat/{threadId}/send")
+    suspend fun sendAiMessage(
+        @Header("Authorization") token: String,
+        @Path("threadId") threadId: Int,
+        @Body request: Map<String, String> // Sends {"message": "Hello"}
+    ): Response<Map<String, String>> // Returns {"reply": "Hi there!"}
+
+    // 3. Get AI Chat History
+    @GET("chat/{threadId}")
+    suspend fun getAiHistory(
+        @Header("Authorization") token: String,
+        @Path("threadId") threadId: Int
+    ): Response<List<Map<String, Any>>>
 }

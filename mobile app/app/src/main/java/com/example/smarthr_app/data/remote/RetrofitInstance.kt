@@ -8,7 +8,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitInstance {
 
-    const val BASE_URL = "https://smarthr-backend-jx0v.onrender.com/"
+    // ✅ UPDATED: Your new Ngrok URL
+    const val BASE_URL = "https://luigi-anthropocentric-uncheerily.ngrok-free.dev/api/"
+
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }

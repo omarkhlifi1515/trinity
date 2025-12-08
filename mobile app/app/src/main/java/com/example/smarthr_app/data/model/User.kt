@@ -1,25 +1,22 @@
 package com.example.smarthr_app.data.model
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import com.google.gson.annotations.SerializedName
 
-@Parcelize
-data class User(
-    val userId: String = "",
-    val name: String = "",
-    val email: String = "",
-    val phone: String? = "",
-    val role: UserRole = UserRole.ROLE_USER,
-    val companyCode: String? = null,
-    val imageUrl: String? = null,
-    val createdAt: String = "",
-    val gender: String? = null,
-    val position: String? = null,
-    val department: String? = null,
-    val waitingCompanyCode: String? = null,
-    val joiningStatus: String? = null
-) : Parcelable
+data class UserDto(
+    @SerializedName("id") val id: Int, // Laravel uses Integer IDs by default
+    @SerializedName("name") val name: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?,
+    // Helper to keep app logic working without breaking changes
+    @SerializedName("role") val role: String = "Employee",
+    @SerializedName("avatar") val avatar: String? = null
+)
 
-enum class UserRole {
-    ROLE_HR, ROLE_USER
-}
+// Used for lists of users (e.g. in Chat or Task assignment)
+data class UserInfo(
+    @SerializedName("id") val id: Int,
+    @SerializedName("name") val name: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("avatar") val avatar: String? = null
+)

@@ -3,70 +3,66 @@ package com.example.smarthr_app.data.local
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.smarthr_app.data.model.User
-import com.google.gson.Gson
+import com.example.smarthr_app.data.model.UserDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
 class DataStoreManager(private val context: Context) {
 
     companion object {
-        private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("user_prefs")
-        private val USER_KEY = stringPreferencesKey("user")
-        private val IS_LOGGED_IN_KEY = booleanPreferencesKey("is_logged_in")
-        private val TOKEN_KEY = stringPreferencesKey("token")
-        private val PENDING_COMPANY_CODE_KEY = stringPreferencesKey("pending_company_code")
-    }
-
-    private val gson = Gson()
-
-    suspend fun saveUser(user: User) {
-        context.dataStore.edit { preferences ->
-            preferences[USER_KEY] = gson.toJson(user)
-            preferences[IS_LOGGED_IN_KEY] = true
-        }
+        val KEY_TOKEN = stringPreferencesKey("token")
+        val KEY_USER_ID = intPreferencesKey("user_id") // Changed to Int
+        val KEY_USER_NAME = stringPreferencesKey("user_name")
+        val KEY_USER_EMAIL = stringPreferencesKey("user_email")
+        val KEY_USER_ROLE = stringPreferencesKey("user_role")
     }
 
     suspend fun saveToken(token: String) {
         context.dataStore.edit { preferences ->
-            preferences[TOKEN_KEY] = token
+            preferences[KEY_TOKEN] = token
         }
     }
 
-    suspend fun savePendingCompanyCode(companyCode: String?) {
+    suspend fun saveUser(user: UserDto) {
         context.dataStore.edit { preferences ->
-            if (companyCode != null) {
-                preferences[PENDING_COMPANY_CODE_KEY] = companyCode
+            preferences[KEY_USER_ID] = user.id
+            preferences[KEY_USER_NAME] = user.name
+            preferences[KEY_USER_EMAIL] = user.email
+            preferences[KEY_USER_ROLE] = user.role
+        }
+    }
+
+    val authToken: Flow<String?> = context.dataStore.data
+        .map { preferences -> preferences[KEY_TOKEN] }
+
+    val user: Flow<UserDto?> = context.dataStore.data
+        .map { preferences ->
+            val id = preferences[KEY_USER_ID]
+            val name = preferences[KEY_USER_NAME]
+            val email = preferences[KEY_USER_EMAIL]
+            val role = preferences[KEY_USER_ROLE] ?: "Employee"
+
+            if (id != null && name != null && email != null) {
+                UserDto(
+                    id = id,
+                    name = name,
+                    email = email,
+                    role = role,
+                    createdAt = null,
+                    updatedAt = null
+                )
             } else {
-                preferences.remove(PENDING_COMPANY_CODE_KEY)
+                null
             }
         }
-    }
 
-    val user: Flow<User?> = context.dataStore.data.map { preferences ->
-        val userJson = preferences[USER_KEY]
-        if (userJson != null) {
-            gson.fromJson(userJson, User::class.java)
-        } else null
-    }
-
-    val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[IS_LOGGED_IN_KEY] ?: false
-    }
-
-    val token: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[TOKEN_KEY]
-    }
-
-    val pendingCompanyCode: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[PENDING_COMPANY_CODE_KEY]
-    }
-
-    suspend fun logout() {
+    suspend fun clearData() {
         context.dataStore.edit { preferences ->
             preferences.clear()
         }
