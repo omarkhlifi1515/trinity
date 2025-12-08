@@ -544,7 +544,7 @@ fun EmployeeMeetingCard(
                 // Find current user's response
                 val responses = meeting.responses ?: emptyList()
                 val currentUserResponse = responses.find { response ->
-                    response.participant?.id == currentUserId
+                    response.participant?.id?.toString() == currentUserId
                 }
                 val responseStatus = currentUserResponse?.status ?: "PENDING"
 

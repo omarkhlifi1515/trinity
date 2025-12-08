@@ -19,7 +19,7 @@ class AttendanceViewModel(private val attendanceRepository: AttendanceRepository
     private val _createOfficeLocationState = MutableStateFlow<Resource<OfficeLocationResponseDto>?>(null)
     val createOfficeLocationState: StateFlow<Resource<OfficeLocationResponseDto>?> = _createOfficeLocationState
 
-    // Attendance States (Updated)
+    // Attendance States
     private val _markAttendanceState = MutableStateFlow<Resource<AttendanceResponseDto>?>(null)
     val markAttendanceState: StateFlow<Resource<AttendanceResponseDto>?> = _markAttendanceState
 
@@ -29,7 +29,7 @@ class AttendanceViewModel(private val attendanceRepository: AttendanceRepository
     private val _companyAttendanceState = MutableStateFlow<Resource<List<AttendanceResponseDto>>?>(null)
     val companyAttendanceState: StateFlow<Resource<List<AttendanceResponseDto>>?> = _companyAttendanceState
 
-    // Office Location functions (Updated parameter types)
+    // Office Location functions
     fun createOfficeLocation(latitude: String, longitude: String, radius: String) {
         viewModelScope.launch {
             _createOfficeLocationState.value = Resource.Loading()
@@ -51,7 +51,7 @@ class AttendanceViewModel(private val attendanceRepository: AttendanceRepository
         }
     }
 
-    // Attendance functions (Updated)
+    // Attendance functions
     fun markAttendance(type: String, latitude: String, longitude: String) {
         viewModelScope.launch {
             _markAttendanceState.value = Resource.Loading()

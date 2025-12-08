@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.smarthr_app.data.model.UserDto
 import com.example.smarthr_app.presentation.theme.PrimaryPurple
 import com.example.smarthr_app.presentation.viewmodel.AuthViewModel
 import com.example.smarthr_app.utils.Resource
@@ -79,7 +80,7 @@ fun EmployeeCompanyManagementScreen(
     // Auto-refresh user data when company state updates
     LaunchedEffect(updateCompanyState) {
         when (val state = updateCompanyState) {
-            is Resource.Success -> {
+            is Resource.Success<UserDto> -> {
                 // Since the API returns 202 (Accepted) with a success message,
                 // we'll treat any Resource.Success as a successful submission
                 ToastHelper.showSuccessToast(context, "Company code submitted! Wait for HR approval.")
@@ -88,7 +89,7 @@ fun EmployeeCompanyManagementScreen(
                 authViewModel.refreshProfile() // Auto-refresh to get updated user data
                 companyCode = "" // Clear the input field
             }
-            is Resource.Error -> {
+            is Resource.Error<UserDto> -> {
                 when {
                     state.message.contains("does not exist", ignoreCase = true) ||
                             state.message.contains("not found", ignoreCase = true) ||
@@ -107,7 +108,7 @@ fun EmployeeCompanyManagementScreen(
                 }
                 authViewModel.clearUpdateCompanyState()
             }
-            is Resource.Loading -> {
+            is Resource.Loading<UserDto> -> {
                 // Keep loading state visible
             }
             null -> {
@@ -118,13 +119,13 @@ fun EmployeeCompanyManagementScreen(
 
     LaunchedEffect(leaveCompanyState) {
         when (val state = leaveCompanyState) {
-            is Resource.Success -> {
+            is Resource.Success<UserDto> -> {
                 ToastHelper.showSuccessToast(context, "Request processed successfully!")
                 authViewModel.clearLeaveCompanyState()
                 isRefreshingProfile = true
                 authViewModel.refreshProfile() // Auto-refresh
             }
-            is Resource.Error -> {
+            is Resource.Error<UserDto> -> {
                 when {
                     state.message.contains("Network error", ignoreCase = true) -> {
                         // This might be a false positive - check if it's actually successful by refreshing profile
@@ -407,9 +408,9 @@ fun EmployeeCompanyManagementScreen(
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = PrimaryPurple
                                 ),
-                                enabled = updateCompanyState !is Resource.Loading
+                                enabled = updateCompanyState !is Resource.Loading<*>
                             ) {
-                                if (updateCompanyState is Resource.Loading) {
+                                if (updateCompanyState is Resource.Loading<*>) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
                                         color = Color.White
@@ -428,8 +429,8 @@ fun EmployeeCompanyManagementScreen(
 
         // Center Loading Indicator
         if (isRefreshingProfile ||
-            (updateCompanyState is Resource.Loading && user?.waitingCompanyCode.isNullOrBlank()) ||
-            (leaveCompanyState is Resource.Loading && !user?.waitingCompanyCode.isNullOrBlank())) {
+            (updateCompanyState is Resource.Loading<*> && user?.waitingCompanyCode.isNullOrBlank()) ||
+            (leaveCompanyState is Resource.Loading<*> && !user?.waitingCompanyCode.isNullOrBlank())) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -487,9 +488,9 @@ fun EmployeeCompanyManagementScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    enabled = leaveCompanyState !is Resource.Loading
+                    enabled = leaveCompanyState !is Resource.Loading<*>
                 ) {
-                    if (leaveCompanyState is Resource.Loading) {
+                    if (leaveCompanyState is Resource.Loading<*>) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             color = Color.White
@@ -535,9 +536,9 @@ fun EmployeeCompanyManagementScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    enabled = leaveCompanyState !is Resource.Loading
+                    enabled = leaveCompanyState !is Resource.Loading<*>
                 ) {
-                    if (leaveCompanyState is Resource.Loading) {
+                    if (leaveCompanyState is Resource.Loading<*>) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             color = Color.White

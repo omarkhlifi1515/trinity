@@ -11,7 +11,7 @@ class CompanyRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getWaitlistEmployees(): Resource<List<UserDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getCompanyWaitlistEmployees("Bearer $token")
                 if (response.isSuccessful) {
@@ -31,7 +31,7 @@ class CompanyRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getApprovedEmployees(): Resource<List<UserDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getApprovedEmployees("Bearer $token")
                 if (response.isSuccessful) {
@@ -51,7 +51,7 @@ class CompanyRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun acceptEmployee(employeeId: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.acceptEmployee("Bearer $token", employeeId)
                 if (response.isSuccessful) {
@@ -71,7 +71,7 @@ class CompanyRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun rejectEmployee(employeeId: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.rejectEmployee("Bearer $token", employeeId)
                 if (response.isSuccessful) {
@@ -91,7 +91,7 @@ class CompanyRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun removeEmployee(employeeId: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.removeEmployee("Bearer $token", employeeId)
                 if (response.isSuccessful) {

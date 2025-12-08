@@ -3,29 +3,17 @@ package com.example.smarthr_app.presentation.screen.chat
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,13 +21,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.smarthr_app.data.model.UserInfo
+import com.example.smarthr_app.presentation.theme.PrimaryPurple
 import com.example.smarthr_app.presentation.viewmodel.AuthViewModel
 import com.example.smarthr_app.presentation.viewmodel.ChatViewModel
 import com.example.smarthr_app.utils.Resource
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllUserListScreen(
     chatViewModel: ChatViewModel,
@@ -47,107 +36,185 @@ fun AllUserListScreen(
     goToBack: () -> Unit,
     onNavigateToChatScreen: (String, String, String) -> Unit
 ) {
-    val user by authViewModel.user.collectAsState(initial = null)
-    val userListState by chatViewModel.userList.collectAsState()
+    // FIX: Explicitly use the current value of the StateFlow as the initial value.
+    // This resolves the type inference ambiguity.
+    val userListResource by chatViewModel.userList.collectAsState(
+        initial = chatViewModel.userList.value
+    )
 
-    // Only load users if user has joined a company
+    val currentUser by authViewModel.user.collectAsState(initial = null)
+    var searchQuery by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
-        if (!user?.companyCode.isNullOrBlank()) {
-            chatViewModel.getAllUser()
-        }
+        chatViewModel.getAllUser()
     }
 
     Column(
         modifier = Modifier
-            .statusBarsPadding()
-            .navigationBarsPadding()
             .fillMaxSize()
+            .background(Color.White)
+            .statusBarsPadding()
     ) {
-        // Top App Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // Top Bar
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = PrimaryPurple),
+            shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
         ) {
-            IconButton(onClick = goToBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = goToBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "New Chat",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
             }
-            Text(
-                text = "Select Contact",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
-            )
         }
 
-        when (userListState) {
+        // Search Bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text("Search users...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = PrimaryPurple,
+                unfocusedBorderColor = Color.LightGray
+            )
+        )
+
+        // User List
+        when (val state = userListResource) {
             is Resource.Loading -> {
-                // Show a loading spinner
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(top = 32.dp)
-                        .align(Alignment.CenterHorizontally)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = PrimaryPurple)
+                }
             }
-
-            is Resource.Error -> {
-                val message = (userListState as Resource.Error).message
-                Text(
-                    text = "Error: $message",
-                    color = Color.Red,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.CenterHorizontally)
-                )
-            }
-
             is Resource.Success -> {
-                val users = (userListState as Resource.Success).data
-                val filteredUsers = users.filter { it.id != user?.userId }
+                val users = state.data.filter {
+                    // Filter out current user and match search query
+                    it.id.toString() != currentUser?.userId &&
+                        (it.name.contains(searchQuery, ignoreCase = true) ||
+                            it.email.contains(searchQuery, ignoreCase = true))
+                }
 
-                LazyColumn {
-                    items(filteredUsers) { user ->
-                        UserListItem(user = user, onClick = {
-                            onNavigateToChatScreen(
-                                user.id,
-                                Uri.encode(user.imageUrl ?: "https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png"),
-                                user.name
+                if (users.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No users found",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(users) { user ->
+                            UserItem(user = user) {
+                                onNavigateToChatScreen(
+                                    user.id.toString(), // ID
+                                    Uri.encode(user.imageUrl ?: ""), // Image URL (Encoded)
+                                    user.name // Name
+                                )
+                            }
+                            HorizontalDivider(
+                                color = Color.LightGray.copy(alpha = 0.3f),
+                                thickness = 1.dp,
+                                modifier = Modifier.padding(horizontal = 16.dp)
                             )
-                        })
-                        HorizontalDivider(color = Color(0xFFEFEFEF), thickness = 0.3.dp)
+                        }
                     }
                 }
             }
-
+            is Resource.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = state.message, color = Color.Red)
+                }
+            }
             null -> {
-                // Do nothing initially
+                // Initial empty state
             }
         }
     }
 }
 
 @Composable
-fun UserListItem(user: UserInfo, onClick: () -> Unit) {
+fun UserItem(user: UserInfo, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .clickable(onClick = onClick)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
-            model = user.imageUrl ?: "https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png",
-            contentDescription = null,
+        // Avatar
+        Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(50.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray),
-            contentScale = ContentScale.Crop
-        )
+                .background(Color.LightGray.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (!user.imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = user.imageUrl,
+                    contentDescription = user.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
-        Text(user.name, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        // Info
+        Column {
+            Text(
+                text = user.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = user.email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
     }
 }

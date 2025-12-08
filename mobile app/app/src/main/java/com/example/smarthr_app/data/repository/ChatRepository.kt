@@ -27,7 +27,7 @@ class ChatRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getMyChatList(companyCode: String): Resource<List<Chat>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getMyChatList("Bearer $token", companyCode)
                 if (response.isSuccessful) {
@@ -48,7 +48,7 @@ class ChatRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getAllUsers(): Resource<List<UserInfo>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getAllHrAndEmployeeOfCompany("Bearer $token")
                 if (response.isSuccessful) {
@@ -72,7 +72,7 @@ class ChatRepository(private val dataStoreManager: DataStoreManager) {
         otherUerId: String
     ): Resource<List<ChatMessage>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getChatBetweenUser("Bearer $token", companyCode = companyCode, otherUserId = otherUerId)
                 if (response.isSuccessful) {
@@ -96,7 +96,7 @@ class ChatRepository(private val dataStoreManager: DataStoreManager) {
         userId: String,
     ): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.markChatSeen(token = "Bearer $token", chatId = chatId, userId = userId)
                 if (response.isSuccessful) {

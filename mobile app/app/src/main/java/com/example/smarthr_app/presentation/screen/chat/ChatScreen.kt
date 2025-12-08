@@ -81,7 +81,7 @@ fun ChatScreen(
     val companyCode = user.companyCode
 
     val chatId = (chatListResource as? Resource.Success)?.data?.find {
-        it.user1.id == receiverId || it.user2.id == receiverId
+        it.user1.id.toString() == receiverId || it.user2.id.toString() == receiverId
     }?.id
 
     val chatMessages = chatId?.let { allMessages[it] }
@@ -184,7 +184,7 @@ fun ChatScreen(
                         reverseLayout = true
                     ) {
                         items(nonNullMessages.reversed(), key = { it.id }) { message ->
-                            ChatBubble(message = message, isFromMe = message.sender.id == userId)
+                            ChatBubble(message = message, isFromMe = message.sender.id.toString() == userId)
                         }
                     }
 

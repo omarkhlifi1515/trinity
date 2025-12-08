@@ -20,7 +20,7 @@ class MeetingRepository(private val dataStoreManager: DataStoreManager) {
         participants: List<String>
     ): Resource<MeetingResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val request = MeetingCreateRequestDto(
                     title = title,
@@ -48,7 +48,7 @@ class MeetingRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getMyMeetings(): Resource<List<MeetingResponseDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getMyMeetings("Bearer $token")
                 if (response.isSuccessful) {
@@ -68,7 +68,7 @@ class MeetingRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getMeetingById(meetingId: String): Resource<MeetingResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getMeetingById("Bearer $token", meetingId)
                 if (response.isSuccessful) {
@@ -96,7 +96,7 @@ class MeetingRepository(private val dataStoreManager: DataStoreManager) {
         participants: List<String>
     ): Resource<MeetingResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val request = MeetingUpdateRequestDto(
                     title = title,
@@ -124,7 +124,7 @@ class MeetingRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun cancelMeeting(meetingId: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.cancelMeeting("Bearer $token", meetingId)
                 if (response.isSuccessful) {
@@ -144,7 +144,7 @@ class MeetingRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun respondToMeeting(meetingId: String, status: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.respondToMeeting("Bearer $token", meetingId, status)
                 if (response.isSuccessful) {

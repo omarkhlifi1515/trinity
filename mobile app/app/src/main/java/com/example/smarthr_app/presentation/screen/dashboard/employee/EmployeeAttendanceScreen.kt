@@ -479,28 +479,63 @@ private suspend fun markAttendance(
 ) {
     val currentLocation = locationHelper.getCurrentLocation()
     if (currentLocation == null) {
-        ToastHelper.showErrorToast(context, "Unable to get current location")
+        ToastHelper.showErrorToast(context, "Unable to get current location. Please enable GPS and try again.")
         return
     }
 
-    val currentLat = currentLocation.latitude.toString()
-    val currentLng = currentLocation.longitude.toString()
+    // Validate coordinates
+    val currentLat = currentLocation.latitude
+    val currentLng = currentLocation.longitude
+    
+    if (currentLat == 0.0 && currentLng == 0.0) {
+        ToastHelper.showErrorToast(context, "Invalid location coordinates. Please enable GPS and try again.")
+        return
+    }
+    
+    if (currentLat < -90 || currentLat > 90 || currentLng < -180 || currentLng > 180) {
+        ToastHelper.showErrorToast(context, "Invalid location coordinates. Please try again.")
+        return
+    }
 
-    val isWithinRange = locationHelper.isWithinRadius(
-        currentLat,
-        currentLng,
-        officeLocation.latitude,
-        officeLocation.longitude,
-        officeLocation.radius
-    )
+    // Check location accuracy
+    if (currentLocation.accuracy > 10000) {
+        ToastHelper.showErrorToast(context, "Location accuracy is too low (${currentLocation.accuracy.toInt()}m). Please wait for better GPS signal.")
+        return
+    }
+
+    val currentLatString = String.format("%.6f", currentLat)
+    val currentLngString = String.format("%.6f", currentLng)
+
+    // Validate office location coordinates
+    if (officeLocation.latitude.isNullOrBlank() || officeLocation.longitude.isNullOrBlank()) {
+        ToastHelper.showErrorToast(context, "Office location is not configured. Please contact HR.")
+        return
+    }
+
+    val isWithinRange = try {
+        locationHelper.isWithinRadius(
+            currentLatString,
+            currentLngString,
+            officeLocation.latitude,
+            officeLocation.longitude,
+            officeLocation.radius
+        )
+    } catch (e: Exception) {
+        ToastHelper.showErrorToast(context, "Error calculating distance: ${e.message}")
+        return
+    }
 
     if (!isWithinRange) {
-        val distance = locationHelper.getDistanceInMeters(
-            currentLat,
-            currentLng,
-            officeLocation.latitude,
-            officeLocation.longitude
-        )
+        val distance = try {
+            locationHelper.getDistanceInMeters(
+                currentLatString,
+                currentLngString,
+                officeLocation.latitude,
+                officeLocation.longitude
+            )
+        } catch (e: Exception) {
+            Float.MAX_VALUE
+        }
         ToastHelper.showErrorToast(
             context,
             "You are ${distance.toInt()}m away from office. Please come closer to mark attendance."
@@ -511,8 +546,8 @@ private suspend fun markAttendance(
     val attendanceType = if (currentStatus == "CHECKIN") "CHECKOUT" else "CHECKIN"
     attendanceViewModel.markAttendance(
         attendanceType,
-        currentLat,
-        currentLng
+        currentLatString,
+        currentLngString
     )
 }
 

@@ -141,13 +141,64 @@ Route::middleware('auth:sanctum')->group(function () {
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        // 2. Ask OpenAI
+        // 2. Ask Google Gemini using native API
         $history = DB::table('ai_messages')->where('thread_id', $threadId)
             ->orderBy('created_at', 'asc')->select('role', 'content')->get()
-            ->map(fn($msg) => ['role' => $msg->role, 'content' => $msg->content])->toArray();
+            ->toArray();
 
-        $result = OpenAI::chat()->create(['model' => 'gpt-4o-mini', 'messages' => $history]);
-        $botReply = $result->choices[0]->message->content;
+        try {
+            $apiKey = config('openai.api_key');
+            if (empty($apiKey)) {
+                return response()->json(['error' => 'Google Gemini API key is not configured.'], 500);
+            }
+            
+            $model = 'gemini-pro';
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+            
+            // Convert history to Gemini format
+            $geminiContents = [];
+            foreach ($history as $msg) {
+                $role = $msg->role === 'assistant' ? 'model' : 'user';
+                $geminiContents[] = [
+                    'role' => $role,
+                    'parts' => [
+                        ['text' => $msg->content]
+                    ]
+                ];
+            }
+            
+            $payload = ['contents' => $geminiContents];
+            
+            $client = new \GuzzleHttp\Client(['timeout' => 30, 'verify' => false]);
+            $httpResponse = $client->post($url, [
+                'json' => $payload,
+                'headers' => ['Content-Type' => 'application/json'],
+            ]);
+            
+            $responseBody = $httpResponse->getBody()->getContents();
+            $responseData = json_decode($responseBody, true);
+            
+            if (isset($responseData['error'])) {
+                \Log::error('Gemini API Error', ['error' => $responseData['error']]);
+                return response()->json(['error' => 'Google Gemini API error: ' . ($responseData['error']['message'] ?? 'Unknown error')], 500);
+            }
+            
+            if (!isset($responseData['candidates']) || empty($responseData['candidates'])) {
+                \Log::error('Gemini API No Candidates', ['response' => $responseData]);
+                return response()->json(['error' => 'Invalid response from Google Gemini API.'], 500);
+            }
+            
+            $candidate = $responseData['candidates'][0];
+            $botReply = $candidate['content']['parts'][0]['text'] ?? '';
+            
+            if (empty($botReply)) {
+                \Log::error('Gemini API Empty Reply', ['candidate' => $candidate]);
+                return response()->json(['error' => 'Empty response from Google Gemini API.'], 500);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Gemini API Error', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to get AI response: ' . $e->getMessage()], 500);
+        }
 
         // 3. Save Bot Reply
         DB::table('ai_messages')->insert([
@@ -157,6 +208,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         return response()->json(['reply' => $botReply]);
     });
+Route::middleware('auth:sanctum')->post('/chat/send', [\App\Http\Controllers\ChatController::class, 'send']);
 
     Route::get('/chat/{threadId}', function ($threadId) {
         return DB::table('ai_messages')->where('thread_id', $threadId)->get();

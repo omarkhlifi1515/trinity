@@ -15,10 +15,13 @@ class Message extends Model
         'content',
         'read_at'
     ];
-    protected $with = ['sender'];
+    protected $with = []; // Removed eager loading to prevent issues with AI sender
+    
     public function sender()
     {
-        return $this->morphTo();
+        // Always return a relationship instance - Eloquent requires this
+        // For AI type, the relationship will be null but the method must return a relationship
+        return $this->morphTo('sender', 'sender_type', 'sender_id');
     }
 
 

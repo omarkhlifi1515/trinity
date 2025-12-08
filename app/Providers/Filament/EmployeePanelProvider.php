@@ -2,8 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\TaskBoard;
+use App\Filament\Widgets\ChatBotWidget; // Ensure this import exists or use full path
 
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
@@ -15,6 +16,7 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -57,10 +59,12 @@ class EmployeePanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Employee/Widgets'), for: 'App\\Filament\\Employee\\Widgets')
             ->widgets([
-
-                AllCalendarWidget::class
+                AllCalendarWidget::class,
             ])
-
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.widgets.chat-bot-widget'),
+            )
             ->navigationGroups([
                 'Work space'
             ])

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Observers\MessageObserver;
 use App\Observers\TaskObserver;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use App\Models\{Task, Message};
@@ -17,7 +18,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Override Google Gemini (OpenAI-compatible) client binding to handle SSL issues in development
+        // This must run after OpenAI service provider, so we use boot() instead
     }
 
     /**
@@ -31,6 +33,13 @@ class AppServiceProvider extends ServiceProvider
         $this->configureUrl();
         Task::observe(TaskObserver::class);
         Message::observe(MessageObserver::class);
+
+        // Register global Filament widgets (floating chat)
+        if (class_exists(Filament::class)) {
+            Filament::registerWidgets([
+                \App\Filament\Widgets\ChatBotWidget::class,
+            ]);
+        }
 
     }
     private function configureCommands(): void

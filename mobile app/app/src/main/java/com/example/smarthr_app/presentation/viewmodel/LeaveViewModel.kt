@@ -53,6 +53,7 @@ class LeaveViewModel(private val leaveRepository: LeaveRepository) : ViewModel()
                     calculateLeaveDays(leave.startDate, leave.endDate)
                 }
                 _leaveSummary.value = LeaveSummary(
+                    period = null,
                     totalLeave = 20,
                     leaveUsed = totalDaysUsed,
                     available = 20 - totalDaysUsed

@@ -4,9 +4,15 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Handler
+import android.os.Looper
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -29,13 +35,96 @@ class LocationHelper(private val context: Context) {
             return@suspendCancellableCoroutine
         }
 
+        // Try to get last known location first
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location ->
-                continuation.resume(location)
+                // Validate location - check if it's not null and has valid coordinates
+                if (location != null && isValidLocation(location)) {
+                    continuation.resume(location)
+                } else {
+                    // If last location is invalid or too old, request a fresh one
+                    requestFreshLocation(continuation)
+                }
             }
             .addOnFailureListener {
-                continuation.resume(null)
+                // If last location fails, request a fresh one
+                requestFreshLocation(continuation)
             }
+    }
+
+    private fun requestFreshLocation(continuation: kotlin.coroutines.Continuation<Location?>) {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
+            .setWaitForAccurateLocation(false)
+            .setMinUpdateIntervalMillis(1000)
+            .setMaxUpdateDelayMillis(5000)
+            .build()
+
+        val handler = Handler(Looper.getMainLooper())
+        var timeoutHandler: Handler? = null
+        
+        var isCompleted = false
+        
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                if (isCompleted) return
+                fusedLocationClient.removeLocationUpdates(this)
+                timeoutHandler?.removeCallbacksAndMessages(null)
+                isCompleted = true
+                
+                val location = locationResult.lastLocation
+                try {
+                    if (location != null && isValidLocation(location)) {
+                        continuation.resume(location)
+                    } else {
+                        continuation.resume(null)
+                    }
+                } catch (e: Exception) {
+                    // Continuation already completed
+                }
+            }
+        }
+
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+            
+            // Set a timeout
+            timeoutHandler = handler
+            val timeoutRunnable = Runnable {
+                if (!isCompleted) {
+                    isCompleted = true
+                    fusedLocationClient.removeLocationUpdates(locationCallback)
+                    try {
+                        continuation.resume(null)
+                    } catch (e: Exception) {
+                        // Continuation already completed
+                    }
+                }
+            }
+            handler.postDelayed(timeoutRunnable, 10000) // 10 second timeout
+        } catch (e: SecurityException) {
+            try {
+                continuation.resume(null)
+            } catch (ex: Exception) {
+                // Continuation already completed
+            }
+        }
+    }
+
+    private fun isValidLocation(location: Location): Boolean {
+        // Check if coordinates are valid (not 0.0, 0.0 which is in the ocean off Africa)
+        // Also check if accuracy is reasonable (not too high/invalid)
+        return location.latitude != 0.0 && 
+               location.longitude != 0.0 &&
+               location.latitude >= -90 && 
+               location.latitude <= 90 &&
+               location.longitude >= -180 && 
+               location.longitude <= 180 &&
+               location.accuracy > 0 &&
+               location.accuracy < 10000 // Less than 10km accuracy
     }
 
     fun isWithinRadius(

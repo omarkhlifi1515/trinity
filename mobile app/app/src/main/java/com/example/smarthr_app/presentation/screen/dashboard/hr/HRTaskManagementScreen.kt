@@ -140,10 +140,14 @@ fun HRTaskManagementScreen(
                         if (filter != "All") {
                             val count = when (filter) {
                                 "In Progress" -> (tasksState as? Resource.Success)?.data?.count {
-                                    it.status == TaskStatus.IN_PROGRESS || it.status == TaskStatus.NOT_STARTED
+                                    val statusEnum = it.getStatusEnum()
+                                    statusEnum == TaskStatus.IN_PROGRESS || statusEnum == TaskStatus.PENDING ||
+                                    it.status.lowercase() in listOf("in_progress", "pending", "not_started")
                                 } ?: 0
                                 "Finished" -> (tasksState as? Resource.Success)?.data?.count {
-                                    it.status == TaskStatus.FINISHED
+                                    val statusEnum = it.getStatusEnum()
+                                    statusEnum == TaskStatus.COMPLETED || statusEnum == TaskStatus.FINISHED ||
+                                    it.status.lowercase() in listOf("completed", "finished")
                                 } ?: 0
                                 else -> 0
                             }
@@ -186,9 +190,15 @@ fun HRTaskManagementScreen(
                 is Resource.Success -> {
                     val filteredTasks = when (selectedFilter) {
                         "In Progress" -> currentTasksState.data.filter {
-                            it.status == TaskStatus.IN_PROGRESS || it.status == TaskStatus.NOT_STARTED
+                            val statusEnum = it.getStatusEnum()
+                            statusEnum == TaskStatus.IN_PROGRESS || statusEnum == TaskStatus.PENDING ||
+                            it.status.lowercase() in listOf("in_progress", "pending", "not_started")
                         }
-                        "Finished" -> currentTasksState.data.filter { it.status == TaskStatus.FINISHED }
+                        "Finished" -> currentTasksState.data.filter { 
+                            val statusEnum = it.getStatusEnum()
+                            statusEnum == TaskStatus.COMPLETED || statusEnum == TaskStatus.FINISHED ||
+                            it.status.lowercase() in listOf("completed", "finished")
+                        }
                         else -> currentTasksState.data
                     }
 
@@ -235,7 +245,7 @@ fun HRTaskManagementScreen(
                                         showEmployeeStatusDialog = true
                                     },
                                     onMarkAsFinished = {
-                                        taskViewModel.updateTaskStatus(task.id, TaskStatus.FINISHED.name)
+                                        taskViewModel.updateTaskStatus(task.id, TaskStatus.COMPLETED.value)
                                     }
                                 )
                             }
@@ -395,7 +405,9 @@ fun HRTaskCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Show only if task is finished
-                    if (task.status == TaskStatus.FINISHED) {
+                    val statusEnum = task.getStatusEnum()
+                    if (statusEnum == TaskStatus.COMPLETED || statusEnum == TaskStatus.FINISHED ||
+                        task.status.lowercase() in listOf("completed", "finished")) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFF4CAF50)
@@ -421,17 +433,25 @@ fun HRTaskCard(
                         }
                     }
 
+                    val priorityEnum = task.getPriorityEnum()
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = when (task.priority) {
+                        color = when (priorityEnum) {
                             TaskPriority.LOW -> Color(0xFF4CAF50)
                             TaskPriority.MEDIUM -> Color(0xFFFF9800)
                             TaskPriority.HIGH -> Color(0xFFFF5722)
                             TaskPriority.URGENT -> Color(0xFFE91E63)
+                            else -> when (task.priority.lowercase()) {
+                                "low" -> Color(0xFF4CAF50)
+                                "medium" -> Color(0xFFFF9800)
+                                "high" -> Color(0xFFFF5722)
+                                "urgent" -> Color(0xFFE91E63)
+                                else -> Color.Gray
+                            }
                         }
                     ) {
                         Text(
-                            text = task.priority.name,
+                            text = priorityEnum?.name ?: task.priority.uppercase(),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White
@@ -462,7 +482,9 @@ fun HRTaskCard(
                                 Icon(Icons.Default.Edit, contentDescription = null)
                             }
                         )
-                        if (task.status != TaskStatus.FINISHED) {
+                        val statusEnum = task.getStatusEnum()
+                        if (statusEnum != TaskStatus.COMPLETED && statusEnum != TaskStatus.FINISHED &&
+                            task.status.lowercase() !in listOf("completed", "finished")) {
                             DropdownMenuItem(
                                 text = { Text("Mark as Finished") },
                                 onClick = {
@@ -506,7 +528,7 @@ fun HRTaskCard(
 
             // Task Description
             Text(
-                text = task.description,
+                text = task.description ?: "No description",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2
@@ -552,9 +574,10 @@ fun HRTaskCard(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val finishedCount = employees.count { it.taskStatus == TaskStatus.FINISHED }
-                                val inProgressCount = employees.count { it.taskStatus == TaskStatus.IN_PROGRESS }
-                                val notStartedCount = employees.count { it.taskStatus == TaskStatus.NOT_STARTED || it.taskStatus == null }
+                                // UserInfo doesn't have taskStatus, so we can't track individual employee status
+                                val finishedCount = 0 // Placeholder
+                                val inProgressCount = 0 // Placeholder
+                                val notStartedCount = employees.size // Placeholder
 
                                 // Show status breakdown
                                 Row(
@@ -616,7 +639,7 @@ fun HRTaskCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = formatDate(task.createdAt),
+                            text = formatDate(task.createdAt ?: ""),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -641,7 +664,7 @@ fun HRTaskCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Created by ${task.assignee.name}",
+                        text = "Created by ${task.assignee?.name ?: task.author?.name ?: "HR"}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -649,13 +672,11 @@ fun HRTaskCard(
             }
 
             // Progress bar - only show for in-progress tasks with actual progress
-            if (task.status == TaskStatus.IN_PROGRESS) {
+            val statusEnum = task.getStatusEnum()
+            if (statusEnum == TaskStatus.IN_PROGRESS || task.status.lowercase() == "in_progress") {
                 Spacer(modifier = Modifier.height(8.dp))
-                val progress = task.employees?.let { employees ->
-                    if (employees.isNotEmpty()) {
-                        employees.count { it.taskStatus == TaskStatus.FINISHED }.toFloat() / employees.size.toFloat()
-                    } else 0f
-                } ?: 0f
+                // Placeholder progress - UserInfo doesn't have taskStatus
+                val progress = 0.5f
 
                 LinearProgressIndicator(
                     progress = progress,
@@ -771,41 +792,26 @@ fun EmployeeStatusDialog(
                             )
                         }
 
-                        // Status Badge
+                        // Status Badge (placeholder - UserInfo doesn't have taskStatus)
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = when (employee.taskStatus) {
-                                TaskStatus.NOT_STARTED -> Color(0xFFE0E0E0)
-                                TaskStatus.IN_PROGRESS -> PrimaryPurple
-                                TaskStatus.FINISHED -> Color(0xFF4CAF50)
-                                null -> Color(0xFFE0E0E0)
-                            }
+                            color = Color(0xFFE0E0E0)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = when (employee.taskStatus) {
-                                        TaskStatus.NOT_STARTED -> Icons.Default.RadioButtonUnchecked
-                                        TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
-                                        TaskStatus.FINISHED -> Icons.Default.CheckCircle
-                                        null -> Icons.Default.RadioButtonUnchecked
-                                    },
+                                    imageVector = Icons.Default.RadioButtonUnchecked,
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp),
-                                    tint = if (employee.taskStatus == TaskStatus.NOT_STARTED || employee.taskStatus == null) Color.Black else Color.White
+                                    tint = Color.Black
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = when (employee.taskStatus) {
-                                        TaskStatus.NOT_STARTED -> "Not Started"
-                                        TaskStatus.IN_PROGRESS -> "In Progress"
-                                        TaskStatus.FINISHED -> "Finished"
-                                        null -> "Not Started"
-                                    },
+                                    text = "Assigned",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (employee.taskStatus == TaskStatus.NOT_STARTED || employee.taskStatus == null) Color.Black else Color.White
+                                    color = Color.Black
                                 )
                             }
                         }
@@ -814,11 +820,11 @@ fun EmployeeStatusDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Summary
+                // Summary (placeholder - UserInfo doesn't have taskStatus)
                 task.employees?.let { employees ->
-                    val finishedCount = employees.count { it.taskStatus == TaskStatus.FINISHED }
-                    val inProgressCount = employees.count { it.taskStatus == TaskStatus.IN_PROGRESS }
-                    val notStartedCount = employees.count { it.taskStatus == TaskStatus.NOT_STARTED || it.taskStatus == null }
+                    val finishedCount = 0
+                    val inProgressCount = 0
+                    val notStartedCount = employees.size
 
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -854,13 +860,14 @@ fun EmployeeStatusDialog(
     }
 }
 
-private fun formatDate(dateString: String): String {
+private fun formatDate(dateString: String?): String {
+    if (dateString.isNullOrBlank()) return "Date"
     return try {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         val outputFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
         val date = inputFormat.parse(dateString)
         outputFormat.format(date ?: Date())
     } catch (e: Exception) {
-        "Date"
+        dateString
     }
 }

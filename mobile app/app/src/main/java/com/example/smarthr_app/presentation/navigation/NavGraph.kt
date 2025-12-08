@@ -19,6 +19,7 @@ import com.example.smarthr_app.data.repository.TaskRepository
 import com.example.smarthr_app.presentation.screen.auth.LoginScreen
 import com.example.smarthr_app.presentation.screen.auth.RegisterScreen
 import com.example.smarthr_app.presentation.screen.auth.RoleSelectionScreen
+import com.example.smarthr_app.presentation.screen.chat.AiChatScreen
 import com.example.smarthr_app.presentation.screen.chat.AllUserListScreen
 import com.example.smarthr_app.presentation.screen.chat.ChatListScreen
 import com.example.smarthr_app.presentation.screen.chat.ChatScreen
@@ -54,58 +55,49 @@ fun NavGraph(
 ) {
     val context = LocalContext.current
     val dataStoreManager = DataStoreManager(context)
+
+    // Repositories
     val authRepository = AuthRepository(dataStoreManager)
     val companyRepository = CompanyRepository(dataStoreManager)
     val taskRepository = TaskRepository(dataStoreManager)
     val chatRepository = ChatRepository(dataStoreManager)
+    val leaveRepository = LeaveRepository(dataStoreManager)
+    val attendanceRepository = AttendanceRepository(dataStoreManager)
+    val meetingRepository = MeetingRepository(dataStoreManager)
 
+    // ViewModels
     val authViewModel: AuthViewModel = viewModel { AuthViewModel(authRepository) }
     val companyViewModel: CompanyViewModel = viewModel { CompanyViewModel(companyRepository) }
     val taskViewModel: TaskViewModel = viewModel { TaskViewModel(taskRepository) }
-
-    val leaveRepository = LeaveRepository(dataStoreManager)
     val leaveViewModel: LeaveViewModel = viewModel { LeaveViewModel(leaveRepository) }
-
-    val attendanceRepository = AttendanceRepository(dataStoreManager)
     val attendanceViewModel: AttendanceViewModel = viewModel { AttendanceViewModel(attendanceRepository) }
-
     val chatViewModel: ChatViewModel = viewModel { ChatViewModel(chatRepository) }
-    val meetingRepository = MeetingRepository(dataStoreManager)
     val meetingViewModel: MeetingViewModel = viewModel { MeetingViewModel(meetingRepository) }
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+        // --- Auth Screens ---
         composable(Screen.RoleSelection.route) {
             RoleSelectionScreen(
-                onNavigateToRegister = {
-                    navController.navigate(Screen.Register.route)
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route)
-                }
+                onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) }
             )
         }
 
         composable(Screen.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
+                onNavigateBack = { navController.popBackStack() },
                 onNavigateToHRDashboard = {
                     navController.navigate(Screen.HRDashboard.route) {
-                        popUpTo(Screen.RoleSelection.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.RoleSelection.route) { inclusive = true }
                     }
                 },
                 onNavigateToEmployeeDashboard = {
                     navController.navigate(Screen.EmployeeDashboard.route) {
-                        popUpTo(Screen.RoleSelection.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.RoleSelection.route) { inclusive = true }
                     }
                 }
             )
@@ -114,26 +106,28 @@ fun NavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
+                onNavigateBack = { navController.popBackStack() },
                 onNavigateToHRDashboard = {
                     navController.navigate(Screen.HRDashboard.route) {
-                        popUpTo(Screen.RoleSelection.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.RoleSelection.route) { inclusive = true }
                     }
                 },
                 onNavigateToEmployeeDashboard = {
                     navController.navigate(Screen.EmployeeDashboard.route) {
-                        popUpTo(Screen.RoleSelection.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.RoleSelection.route) { inclusive = true }
                     }
                 }
             )
         }
 
+        // --- Chat Bot (New) ---
+        composable(Screen.AiChat.route) {
+            AiChatScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // --- HR Dashboard & Features ---
         composable(Screen.HRDashboard.route) {
             HRDashboardScreen(
                 chatViewModel = chatViewModel,
@@ -141,54 +135,29 @@ fun NavGraph(
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.RoleSelection.route) {
-                        popUpTo(Screen.HRDashboard.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.HRDashboard.route) { inclusive = true }
                     }
                 },
-                onNavigateToEmployees = {
-                    navController.navigate(Screen.EmployeeManagement.route)
-                },
-                onNavigateToProfile = {
-                    navController.navigate(Screen.HRProfile.route)
-                },
-                onNavigateToTasks = {
-                    navController.navigate(Screen.HRTaskManagement.route)
-                },
-                onNavigateToLeaves = {
-                    navController.navigate(Screen.HRLeaveManagement.route)
-                },
-                onNavigateToOfficeLocation = {
-                    navController.navigate(Screen.HROfficeLocation.route)
-                },
-                onNavigateToCompanyAttendance = {
-                    navController.navigate(Screen.HRCompanyAttendance.route)
-                },
-                onNavigateToChatList = {
-                    navController.navigate(Screen.ChatList.route)
-                },
-                onNavigateToMeetings = {
-                    navController.navigate(Screen.HRMeetingManagement.route)
-                }
+                onNavigateToEmployees = { navController.navigate(Screen.EmployeeManagement.route) },
+                onNavigateToProfile = { navController.navigate(Screen.HRProfile.route) },
+                onNavigateToTasks = { navController.navigate(Screen.HRTaskManagement.route) },
+                onNavigateToLeaves = { navController.navigate(Screen.HRLeaveManagement.route) },
+                onNavigateToOfficeLocation = { navController.navigate(Screen.HROfficeLocation.route) },
+                onNavigateToCompanyAttendance = { navController.navigate(Screen.HRCompanyAttendance.route) },
+                onNavigateToChatList = { navController.navigate(Screen.ChatList.route) },
+                onNavigateToMeetings = { navController.navigate(Screen.HRMeetingManagement.route) },
+                // Add this if you updated HRDashboardScreen to support the AI button:
+                // onNavigateToAiChat = { navController.navigate(Screen.AiChat.route) }
             )
         }
 
-        // HR Task Management Routes
         composable(Screen.HRTaskManagement.route) {
             HRTaskManagementScreen(
                 taskViewModel = taskViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToCreateTask = {
-                    navController.navigate(Screen.CreateTask.route)
-                },
-                onNavigateToTaskDetail = { taskId ->
-                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                },
-                onNavigateToEditTask = { taskId ->
-                    navController.navigate(Screen.EditTask.createRoute(taskId))
-                }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCreateTask = { navController.navigate(Screen.CreateTask.route) },
+                onNavigateToTaskDetail = { taskId -> navController.navigate(Screen.TaskDetail.createRoute(taskId)) },
+                onNavigateToEditTask = { taskId -> navController.navigate(Screen.EditTask.createRoute(taskId)) }
             )
         }
 
@@ -196,9 +165,7 @@ fun NavGraph(
             CreateTaskScreen(
                 taskViewModel = taskViewModel,
                 companyViewModel = companyViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -210,12 +177,8 @@ fun NavGraph(
             TaskDetailScreen(
                 taskId = taskId,
                 taskViewModel = taskViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToEdit = { taskId ->
-                    navController.navigate(Screen.EditTask.createRoute(taskId))
-                }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEdit = { id -> navController.navigate(Screen.EditTask.createRoute(id)) }
             )
         }
 
@@ -228,13 +191,83 @@ fun NavGraph(
                 taskViewModel = taskViewModel,
                 companyViewModel = companyViewModel,
                 taskId = taskId,
-                onNavigateBack = {
-                    navController.popBackStack()
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.HRProfile.route) {
+            HRProfileScreen(
+                authViewModel = authViewModel,
+                onNavigateToEditProfile = { navController.navigate(Screen.EditProfile.route) },
+                onNavigateBack = { navController.popBackStack() },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.RoleSelection.route) {
+                        popUpTo(Screen.HRDashboard.route) { inclusive = true }
+                    }
                 }
             )
         }
 
-        // Employee Dashboard with updated screens - KEEP BOTTOM NAV VISIBLE
+        composable(Screen.EmployeeManagement.route) {
+            EmployeeManagementScreen(
+                companyViewModel = companyViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.HRLeaveManagement.route) {
+            HRLeaveManagementScreen(
+                leaveViewModel = leaveViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.HROfficeLocation.route) {
+            HROfficeLocationScreen(
+                attendanceViewModel = attendanceViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.HRCompanyAttendance.route) {
+            HRCompanyAttendanceScreen(
+                attendanceViewModel = attendanceViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.HRMeetingManagement.route) {
+            HRMeetingManagementScreen(
+                meetingViewModel = meetingViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCreateMeeting = { navController.navigate(Screen.CreateMeeting.route) },
+                onNavigateToEditMeeting = { meetingId -> navController.navigate(Screen.EditMeeting.createRoute(meetingId)) }
+            )
+        }
+
+        composable(Screen.CreateMeeting.route) {
+            CreateMeetingScreen(
+                meetingViewModel = meetingViewModel,
+                companyViewModel = companyViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EditMeeting.route,
+            arguments = Screen.EditMeeting.arguments
+        ) { backStackEntry ->
+            val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
+            CreateMeetingScreen(
+                meetingViewModel = meetingViewModel,
+                companyViewModel = companyViewModel,
+                meetingId = meetingId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // --- Employee Dashboard & Features ---
         composable(Screen.EmployeeDashboard.route) {
             EmployeeDashboardScreen(
                 chatViewModel = chatViewModel,
@@ -245,26 +278,16 @@ fun NavGraph(
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.RoleSelection.route) {
-                        popUpTo(Screen.EmployeeDashboard.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.EmployeeDashboard.route) { inclusive = true }
                     }
                 },
-                onNavigateToProfile = {
-                    navController.navigate(Screen.EmployeeProfile.route)
-                },
-                onNavigateToTaskDetail = { taskId ->
-                    navController.navigate(Screen.EmployeeTaskDetail.createRoute(taskId))
-                },
-                onNavigateToChatList = {
-                    navController.navigate(Screen.ChatList.route)
-                },
-                onNavigateToMeetings = {
-                    navController.navigate(Screen.EmployeeMeeting.route)
-                },
-                onNavigateToCompanyManagement = {
-                    navController.navigate(Screen.CompanyManagement.route)
-                }
+                onNavigateToProfile = { navController.navigate(Screen.EmployeeProfile.route) },
+                onNavigateToTaskDetail = { taskId -> navController.navigate(Screen.EmployeeTaskDetail.createRoute(taskId)) },
+                onNavigateToChatList = { navController.navigate(Screen.ChatList.route) },
+                onNavigateToMeetings = { navController.navigate(Screen.EmployeeMeeting.route) },
+                onNavigateToCompanyManagement = { navController.navigate(Screen.CompanyManagement.route) },
+                // Add this if you updated EmployeeDashboardScreen to support the AI button:
+                // onNavigateToAiChat = { navController.navigate(Screen.AiChat.route) }
             )
         }
 
@@ -276,83 +299,30 @@ fun NavGraph(
             EmployeeTaskDetailScreen(
                 taskId = taskId,
                 taskViewModel = taskViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        // Employee Meeting Route with AuthViewModel
         composable(Screen.EmployeeMeeting.route) {
             EmployeeMeetingScreen(
                 meetingViewModel = meetingViewModel,
                 authViewModel = authViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToCompanyManagement = {
-                    navController.navigate(Screen.CompanyManagement.route)
-                }
-            )
-        }
-
-        composable(Screen.HRProfile.route) {
-            HRProfileScreen(
-                authViewModel = authViewModel,
-                onNavigateToEditProfile = {
-                    navController.navigate(Screen.EditProfile.route)
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onLogout = {
-                    authViewModel.logout()
-                    navController.navigate(Screen.RoleSelection.route) {
-                        popUpTo(Screen.HRDashboard.route) {
-                            inclusive = true
-                        }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.EmployeeManagement.route) {
-            EmployeeManagementScreen(
-                companyViewModel = companyViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCompanyManagement = { navController.navigate(Screen.CompanyManagement.route) }
             )
         }
 
         composable(Screen.EmployeeProfile.route) {
             EmployeeProfileScreen(
                 authViewModel = authViewModel,
-                onNavigateToEditProfile = {
-                    navController.navigate(Screen.EditProfile.route)
-                },
-                onNavigateToCompanyManagement = {
-                    navController.navigate(Screen.CompanyManagement.route)
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
+                onNavigateToEditProfile = { navController.navigate(Screen.EditProfile.route) },
+                onNavigateToCompanyManagement = { navController.navigate(Screen.CompanyManagement.route) },
+                onNavigateBack = { navController.popBackStack() },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.RoleSelection.route) {
-                        popUpTo(Screen.EmployeeDashboard.route) {
-                            inclusive = true
-                        }
+                        popUpTo(Screen.EmployeeDashboard.route) { inclusive = true }
                     }
-                }
-            )
-        }
-
-        composable(Screen.EditProfile.route) {
-            EditProfileScreen(
-                authViewModel = authViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
                 }
             )
         }
@@ -360,56 +330,28 @@ fun NavGraph(
         composable(Screen.CompanyManagement.route) {
             EmployeeCompanyManagementScreen(
                 authViewModel = authViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        composable(Screen.HRLeaveManagement.route) {
-            HRLeaveManagementScreen(
-                leaveViewModel = leaveViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+        // --- Shared Screens ---
+        composable(Screen.EditProfile.route) {
+            EditProfileScreen(
+                authViewModel = authViewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        composable(Screen.HROfficeLocation.route) {
-            HROfficeLocationScreen(
-                attendanceViewModel = attendanceViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Screen.HRCompanyAttendance.route) {
-            HRCompanyAttendanceScreen(
-                attendanceViewModel = attendanceViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        // Chat Routes with company verification
         composable(Screen.ChatList.route) {
             ChatListScreen(
                 chatViewModel = chatViewModel,
                 authViewModel = authViewModel,
-                onNavigateToUserListScreen = {
-                    navController.navigate(Screen.AllUserListScreen.route)
-                },
+                onNavigateToUserListScreen = { navController.navigate(Screen.AllUserListScreen.route) },
                 onNavigateChatScreen = { otherUserId, imageUrl, name ->
                     navController.navigate("${Screen.ChatScreen.route}/$otherUserId/$imageUrl/$name")
                 },
-                goToBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToCompanyManagement = {
-                    navController.navigate(Screen.CompanyManagement.route)
-                }
+                goToBack = { navController.popBackStack() },
+                onNavigateToCompanyManagement = { navController.navigate(Screen.CompanyManagement.route) }
             )
         }
 
@@ -417,9 +359,7 @@ fun NavGraph(
             AllUserListScreen(
                 chatViewModel = chatViewModel,
                 authViewModel = authViewModel,
-                goToBack = {
-                    navController.popBackStack()
-                },
+                goToBack = { navController.popBackStack() },
                 onNavigateToChatScreen = { otherUserId, imageUrl, name ->
                     navController.navigate("${Screen.ChatScreen.route}/$otherUserId/$imageUrl/$name")
                 }
@@ -443,49 +383,7 @@ fun NavGraph(
                 receiverId = otherUserId,
                 imageUrl = imageUrl,
                 name = name,
-                goToBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Screen.HRMeetingManagement.route) {
-            HRMeetingManagementScreen(
-                meetingViewModel = meetingViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToCreateMeeting = {
-                    navController.navigate(Screen.CreateMeeting.route)
-                },
-                onNavigateToEditMeeting = { meetingId ->
-                    navController.navigate(Screen.EditMeeting.createRoute(meetingId))
-                }
-            )
-        }
-
-        composable(Screen.CreateMeeting.route) {
-            CreateMeetingScreen(
-                meetingViewModel = meetingViewModel,
-                companyViewModel = companyViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(
-            route = Screen.EditMeeting.route,
-            arguments = Screen.EditMeeting.arguments
-        ) { backStackEntry ->
-            val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
-            CreateMeetingScreen(
-                meetingViewModel = meetingViewModel,
-                companyViewModel = companyViewModel,
-                meetingId = meetingId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                goToBack = { navController.popBackStack() }
             )
         }
     }
@@ -495,55 +393,53 @@ sealed class Screen(val route: String) {
     object RoleSelection : Screen("role_selection")
     object Register : Screen("register")
     object Login : Screen("login")
+
+    // Dashboards
     object HRDashboard : Screen("hr_dashboard")
-    object HRProfile : Screen("hr_profile")
-    object EmployeeManagement : Screen("employee_management")
     object EmployeeDashboard : Screen("employee_dashboard")
+
+    // Profiles
+    object HRProfile : Screen("hr_profile")
     object EmployeeProfile : Screen("employee_profile")
     object EditProfile : Screen("edit_profile")
+
+    // Features
+    object EmployeeManagement : Screen("employee_management")
     object CompanyManagement : Screen("company_management")
+
+    // Chat
     object ChatList : Screen("chat_list")
     object AllUserListScreen : Screen("user_list")
     object ChatScreen : Screen("chat_screen")
+    object AiChat : Screen("ai_chat") // Added AI Chat Route
 
-    // Task Management Routes
+    // Task Management
     object HRTaskManagement : Screen("hr_task_management")
     object CreateTask : Screen("create_task")
-
     object TaskDetail : Screen("task_detail/{taskId}") {
         fun createRoute(taskId: String) = "task_detail/$taskId"
-        val arguments = listOf(
-            navArgument("taskId") { type = NavType.StringType }
-        )
+        val arguments = listOf(navArgument("taskId") { type = NavType.StringType })
     }
-
     object EditTask : Screen("edit_task/{taskId}") {
         fun createRoute(taskId: String) = "edit_task/$taskId"
-        val arguments = listOf(
-            navArgument("taskId") { type = NavType.StringType }
-        )
+        val arguments = listOf(navArgument("taskId") { type = NavType.StringType })
     }
-
     object EmployeeTaskDetail : Screen("employee_task_detail/{taskId}") {
         fun createRoute(taskId: String) = "employee_task_detail/$taskId"
-        val arguments = listOf(
-            navArgument("taskId") { type = NavType.StringType }
-        )
+        val arguments = listOf(navArgument("taskId") { type = NavType.StringType })
     }
 
+    // Leave & Attendance
     object HRLeaveManagement : Screen("hr_leave_management")
-
     object HROfficeLocation : Screen("hr_office_location")
     object HRCompanyAttendance : Screen("hr_company_attendance")
 
-    // Meeting Management Routes
+    // Meetings
     object HRMeetingManagement : Screen("hr_meeting_management")
     object CreateMeeting : Screen("create_meeting")
     object EditMeeting : Screen("edit_meeting/{meetingId}") {
         fun createRoute(meetingId: String) = "edit_meeting/$meetingId"
-        val arguments = listOf(
-            navArgument("meetingId") { type = NavType.StringType }
-        )
+        val arguments = listOf(navArgument("meetingId") { type = NavType.StringType })
     }
     object EmployeeMeeting : Screen("employee_meeting")
 }

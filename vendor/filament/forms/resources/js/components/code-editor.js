@@ -19,17 +19,28 @@ import { xml } from '@codemirror/lang-xml'
 import { yaml } from '@codemirror/lang-yaml'
 
 export default function codeEditorFormComponent({
+    canWrap,
     isDisabled,
+    isLive,
+    isLiveDebounced,
+    isLiveOnBlur,
+    liveDebounce,
     language,
     state,
 }) {
     return {
         editor: null,
         themeCompartment: new Compartment(),
+        isDocChanged: false,
         state,
 
         init() {
             const languageExtension = this.getLanguageExtension()
+
+            const debouncedCommit = Alpine.debounce(
+                () => this.$wire.commit(),
+                liveDebounce ?? 300,
+            )
 
             this.editor = new EditorView({
                 parent: this.$refs.editor,
@@ -38,14 +49,25 @@ export default function codeEditorFormComponent({
                     extensions: [
                         basicSetup,
                         keymap.of([indentWithTab]),
+                        ...(canWrap ? [EditorView.lineWrapping] : []),
                         EditorState.readOnly.of(isDisabled),
                         EditorView.editable.of(!isDisabled),
                         EditorView.updateListener.of((viewUpdate) => {
                             if (!viewUpdate.docChanged) {
                                 return
                             }
-
+                            this.isDocChanged = true
                             this.state = viewUpdate.state.doc.toString()
+                            if (!isLiveOnBlur && (isLive || isLiveDebounced)) {
+                                debouncedCommit()
+                            }
+                        }),
+                        EditorView.domEventHandlers({
+                            blur: (event, view) => {
+                                if (isLiveOnBlur && this.isDocChanged) {
+                                    this.$wire.$commit()
+                                }
+                            },
                         }),
                         ...(languageExtension ? [languageExtension] : []),
                         this.themeCompartment.of(this.getThemeExtensions()),

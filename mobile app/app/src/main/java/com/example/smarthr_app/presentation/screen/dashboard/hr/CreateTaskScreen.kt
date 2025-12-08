@@ -80,8 +80,8 @@ fun CreateTaskScreen(
                 is Resource.Success -> {
                     val task = state.data
                     title = task.title
-                    description = task.description
-                    selectedPriority = task.priority
+                    description = task.description ?: ""
+                    selectedPriority = task.getPriorityEnum()
                 }
                 else -> {}
             }
@@ -144,8 +144,8 @@ fun CreateTaskScreen(
                 taskId = taskId,
                 title = title.trim(),
                 description = description.trim(),
-                priority = selectedPriority!!.name,
-                status = TaskStatus.NOT_STARTED.name,
+                priority = selectedPriority!!.value,
+                status = TaskStatus.PENDING.value,
                 employees = selectedEmployees.toList()
             )
         } else {
@@ -153,8 +153,8 @@ fun CreateTaskScreen(
                 context = context,
                 title = title.trim(),
                 description = description.trim(),
-                priority = selectedPriority!!.name,
-                status = TaskStatus.NOT_STARTED.name,
+                priority = selectedPriority!!.value,
+                status = TaskStatus.PENDING.value,
                 employees = selectedEmployees.toList(),
                 imageUri = selectedImageUri
             )

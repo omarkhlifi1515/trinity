@@ -241,7 +241,7 @@ fun EmployeeLeaveScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = leaveSummary.period,
+                                text = leaveSummary.period ?: "",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -606,7 +606,7 @@ fun EmployeeLeaveCard(
                             color = PrimaryPurple.copy(alpha = 0.1f)
                         ) {
                             Text(
-                                text = leave.type,
+                                text = leave.type ?: leave.leaveType,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = PrimaryPurple,
@@ -617,7 +617,7 @@ fun EmployeeLeaveCard(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = leave.emergencyContact,
+                            text = leave.emergencyContact ?: "",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -626,7 +626,7 @@ fun EmployeeLeaveCard(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = leave.leaveDescription,
+                        text = leave.leaveDescription ?: leave.reason ?: "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -655,7 +655,7 @@ fun EmployeeLeaveCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "${leave.status.lowercase().replaceFirstChar { it.uppercase() }} by ${leave.responseBy.name}",
+                        text = "${leave.status.lowercase().replaceFirstChar { it.uppercase() }}${leave.responseBy?.let { " by $it" } ?: ""}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

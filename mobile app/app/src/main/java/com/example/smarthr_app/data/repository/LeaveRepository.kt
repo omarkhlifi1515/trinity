@@ -13,7 +13,7 @@ class LeaveRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun submitLeaveRequest(leaveRequest: LeaveRequestDto): Resource<EmployeeLeaveResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.submitLeaveRequest("Bearer $token", leaveRequest)
                 if (response.isSuccessful) {
@@ -34,7 +34,7 @@ class LeaveRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getEmployeeLeaves(): Resource<List<EmployeeLeaveResponseDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getEmployeeLeaves("Bearer $token")
                 if (response.isSuccessful) {
@@ -54,7 +54,7 @@ class LeaveRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getCompanyLeaves(): Resource<List<HRLeaveResponseDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getCompanyLeaves("Bearer $token")
                 if (response.isSuccessful) {
@@ -74,7 +74,7 @@ class LeaveRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun updateLeaveRequest(leaveId: String, leaveRequest: LeaveRequestDto): Resource<EmployeeLeaveResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.updateLeaveRequest("Bearer $token", leaveId, leaveRequest)
                 if (response.isSuccessful) {
@@ -94,7 +94,7 @@ class LeaveRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun updateLeaveStatus(leaveId: String, status: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.updateLeaveStatus("Bearer $token", leaveId, status)
                 if (response.isSuccessful) {
@@ -114,7 +114,7 @@ class LeaveRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun removeHRResponse(leaveId: String): Resource<SuccessApiResponseMessage> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.removeHRResponse("Bearer $token", leaveId)
                 if (response.isSuccessful) {

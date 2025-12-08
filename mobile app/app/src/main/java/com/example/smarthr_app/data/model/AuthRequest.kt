@@ -1,5 +1,6 @@
 package com.example.smarthr_app.data.model
 
+import com.google.gson.annotations.JsonAdapter
 import com.google.gson.annotations.SerializedName
 
 data class UserRegisterRequest(
@@ -31,20 +32,31 @@ data class AuthResponse(
     val user: UserDto
 )
 
+@JsonAdapter(UserDtoTypeAdapter::class)
 data class UserDto(
     @SerializedName("id")
-    val userId: String,
+    val userId: String, // Custom adapter converts Int to String
     val name: String,
     val email: String,
-    val phone: String,
-    val gender: String?,
+    @SerializedName("phone")
+    val phone: String = "",
+    @SerializedName("gender")
+    val gender: String? = null,
     val role: String,
-    val companyCode: String?,
-    val imageUrl: String?,
+    @SerializedName("company_code")
+    val companyCode: String? = null,
+    @SerializedName("image_url")
+    val imageUrl: String? = null,
     val position: String? = null,
     val department: String? = null,
+    @SerializedName("waiting_company_code")
     val waitingCompanyCode: String? = null,
-    val joiningStatus: String? = null
+    @SerializedName("joining_status")
+    val joiningStatus: String? = null,
+    @SerializedName("created_at")
+    val createdAt: String? = null,
+    @SerializedName("updated_at")
+    val updatedAt: String? = null
 )
 
 data class UpdateProfileRequest(

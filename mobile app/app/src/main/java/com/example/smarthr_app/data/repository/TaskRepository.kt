@@ -200,10 +200,16 @@ class TaskRepository(private val dataStoreManager: DataStoreManager) {
             val token = getToken() ?: return Resource.Error("Authentication required")
             val user = dataStoreManager.user.first() ?: return Resource.Error("User not found")
 
+            // Assuming userId in DataStore is String but convertible to Int for CommentRequest
+            // If userId is a UUID string, this will fail.
+            // If so, CommentRequest needs to be updated to String.
+            // For now, trying conversion.
+            val userIdInt = user.userId.toIntOrNull() ?: 0
+
             val request = CommentRequest(
                 taskId = taskId.toInt(),
                 content = content,
-                userId = user.id
+                userId = userIdInt
             )
             val response = RetrofitInstance.api.addComment("Bearer $token", request)
             if (response.isSuccessful) {

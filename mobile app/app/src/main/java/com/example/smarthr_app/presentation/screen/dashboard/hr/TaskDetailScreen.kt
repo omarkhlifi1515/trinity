@@ -223,16 +223,24 @@ fun TaskHeaderCard(task: TaskResponse) {
             modifier = Modifier.padding(20.dp)
         ) {
             // Status and Priority Row
+            val statusEnum = task.getStatusEnum()
+            val priorityEnum = task.getPriorityEnum()
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = when (task.status) {
-                        TaskStatus.NOT_STARTED -> Color(0xFFE0E0E0)
+                    color = when (statusEnum) {
+                        TaskStatus.PENDING, TaskStatus.NOT_STARTED -> Color(0xFFE0E0E0)
                         TaskStatus.IN_PROGRESS -> PrimaryPurple
-                        TaskStatus.FINISHED -> Color(0xFF4CAF50)
+                        TaskStatus.COMPLETED, TaskStatus.FINISHED -> Color(0xFF4CAF50)
+                        else -> when (task.status.lowercase()) {
+                            "pending", "not_started" -> Color(0xFFE0E0E0)
+                            "in_progress" -> PrimaryPurple
+                            "completed", "finished" -> Color(0xFF4CAF50)
+                            else -> Color.Gray
+                        }
                     }
                 ) {
                     Row(
@@ -240,24 +248,39 @@ fun TaskHeaderCard(task: TaskResponse) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = when (task.status) {
-                                TaskStatus.NOT_STARTED -> Icons.Default.RadioButtonUnchecked
+                            imageVector = when (statusEnum) {
+                                TaskStatus.PENDING, TaskStatus.NOT_STARTED -> Icons.Default.RadioButtonUnchecked
                                 TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
-                                TaskStatus.FINISHED -> Icons.Default.CheckCircle
+                                TaskStatus.COMPLETED, TaskStatus.FINISHED -> Icons.Default.CheckCircle
+                                else -> Icons.Default.Help
                             },
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = if (task.status == TaskStatus.NOT_STARTED) Color.Black else Color.White
+                            tint = when {
+                                statusEnum == TaskStatus.PENDING || statusEnum == TaskStatus.NOT_STARTED ||
+                                task.status.lowercase() in listOf("pending", "not_started") -> Color.Black
+                                else -> Color.White
+                            }
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = when (task.status) {
-                                TaskStatus.NOT_STARTED -> "Not Started"
+                            text = when (statusEnum) {
+                                TaskStatus.PENDING, TaskStatus.NOT_STARTED -> "Pending"
                                 TaskStatus.IN_PROGRESS -> "In Progress"
-                                TaskStatus.FINISHED -> "Finished"
+                                TaskStatus.COMPLETED, TaskStatus.FINISHED -> "Completed"
+                                else -> when (task.status.lowercase()) {
+                                    "pending", "not_started" -> "Pending"
+                                    "in_progress" -> "In Progress"
+                                    "completed", "finished" -> "Completed"
+                                    else -> task.status
+                                }
                             },
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (task.status == TaskStatus.NOT_STARTED) Color.Black else Color.White,
+                            color = when {
+                                statusEnum == TaskStatus.PENDING || statusEnum == TaskStatus.NOT_STARTED ||
+                                task.status.lowercase() in listOf("pending", "not_started") -> Color.Black
+                                else -> Color.White
+                            },
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -265,11 +288,18 @@ fun TaskHeaderCard(task: TaskResponse) {
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = when (task.priority) {
+                    color = when (priorityEnum) {
                         TaskPriority.LOW -> Color(0xFF4CAF50)
                         TaskPriority.MEDIUM -> Color(0xFFFF9800)
                         TaskPriority.HIGH -> Color(0xFFFF5722)
                         TaskPriority.URGENT -> Color(0xFFE91E63)
+                        else -> when (task.priority.lowercase()) {
+                            "low" -> Color(0xFF4CAF50)
+                            "medium" -> Color(0xFFFF9800)
+                            "high" -> Color(0xFFFF5722)
+                            "urgent" -> Color(0xFFE91E63)
+                            else -> Color.Gray
+                        }
                     }
                 ) {
                     Row(
@@ -277,11 +307,12 @@ fun TaskHeaderCard(task: TaskResponse) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = when (task.priority) {
+                            imageVector = when (priorityEnum) {
                                 TaskPriority.LOW -> Icons.Default.KeyboardArrowDown
                                 TaskPriority.MEDIUM -> Icons.Default.Remove
                                 TaskPriority.HIGH -> Icons.Default.KeyboardArrowUp
                                 TaskPriority.URGENT -> Icons.Default.PriorityHigh
+                                else -> Icons.Default.PriorityHigh
                             },
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
@@ -289,7 +320,7 @@ fun TaskHeaderCard(task: TaskResponse) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${task.priority.name} Priority",
+                            text = "${priorityEnum?.name ?: task.priority.uppercase()} Priority",
                             style = MaterialTheme.typography.labelMedium,
                             color = Color.White,
                             fontWeight = FontWeight.Bold
@@ -322,13 +353,13 @@ fun TaskHeaderCard(task: TaskResponse) {
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Created: ${formatFullDate(task.createdAt)}",
+                    text = "Created: ${formatFullDate(task.createdAt ?: "")}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            if (task.updatedAt != task.createdAt) {
+            if (task.updatedAt != null && task.updatedAt != task.createdAt) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -422,7 +453,7 @@ fun TaskDescriptionCard(task: TaskResponse) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = task.description,
+                text = task.description ?: "No description provided",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = MaterialTheme.typography.bodyMedium.lineHeight
@@ -541,27 +572,17 @@ fun AssignedEmployeesCard(task: TaskResponse) { // Add task parameter
                                     maxLines = 1
                                 )
 
-                                // Status indicator
+                                // Status indicator (placeholder - UserInfo doesn't have taskStatus)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = when (employee.taskStatus) {
-                                        TaskStatus.NOT_STARTED -> Color(0xFFE0E0E0)
-                                        TaskStatus.IN_PROGRESS -> PrimaryPurple
-                                        TaskStatus.FINISHED -> Color(0xFF4CAF50)
-                                        null -> Color(0xFFE0E0E0)
-                                    }
+                                    color = Color(0xFFE0E0E0)
                                 ) {
                                     Text(
-                                        text = when (employee.taskStatus) {
-                                            TaskStatus.NOT_STARTED -> "Pending"
-                                            TaskStatus.IN_PROGRESS -> "Working"
-                                            TaskStatus.FINISHED -> "Done"
-                                            null -> "Pending"
-                                        },
+                                        text = "Assigned",
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (employee.taskStatus == TaskStatus.NOT_STARTED || employee.taskStatus == null) Color.Black else Color.White
+                                        color = Color.Black
                                     )
                                 }
                             }
@@ -588,9 +609,9 @@ fun AssignedEmployeesCard(task: TaskResponse) { // Add task parameter
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            val finishedCount = employees.count { it.taskStatus == TaskStatus.FINISHED }
+                            // UserInfo doesn't have taskStatus, so we can't track individual progress
                             Text(
-                                text = "Progress: $finishedCount/${employees.size} employees completed",
+                                text = "${employees.size} employees assigned",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -785,6 +806,7 @@ fun CommentsSection(
 
 @Composable
 fun CommentItem(comment: CommentResponse) {
+    val commentAuthor = comment.getAuthor()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -797,9 +819,9 @@ fun CommentItem(comment: CommentResponse) {
                 .background(PrimaryPurple.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            if (!comment.author.imageUrl.isNullOrBlank()) {
+            if (!commentAuthor?.imageUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = comment.author.imageUrl,
+                    model = commentAuthor?.imageUrl ?: "",
                     contentDescription = "Profile Picture",
                     modifier = Modifier
                         .size(40.dp)
@@ -829,14 +851,14 @@ fun CommentItem(comment: CommentResponse) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = comment.author.name,
+                        text = commentAuthor?.name ?: "Unknown",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
                     // Add HR badge if the comment is from HR
-                    if (isHRUser(comment.author)) {
+                    if (commentAuthor != null && isHRUser(commentAuthor)) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -854,7 +876,7 @@ fun CommentItem(comment: CommentResponse) {
                 }
 
                 Text(
-                    text = formatTimeAgo(comment.createdAt),
+                    text = formatTimeAgo(comment.createdAt ?: ""),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -867,7 +889,7 @@ fun CommentItem(comment: CommentResponse) {
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
                 Text(
-                    text = comment.text,
+                    text = comment.getText(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(12.dp)
@@ -885,7 +907,8 @@ private fun isHRUser(author: UserInfo): Boolean {
             author.name.contains("manager", ignoreCase = true)
 }
 
-private fun formatFullDate(dateString: String): String {
+private fun formatFullDate(dateString: String?): String {
+    if (dateString.isNullOrBlank()) return "Date"
     return try {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         val outputFormat = SimpleDateFormat("MMM dd, yyyy 'at' HH:mm", Locale.getDefault())
@@ -896,7 +919,8 @@ private fun formatFullDate(dateString: String): String {
     }
 }
 
-private fun formatTimeAgo(dateString: String): String {
+private fun formatTimeAgo(dateString: String?): String {
+    if (dateString.isNullOrBlank()) return "Recently"
     return try {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         val date = inputFormat.parse(dateString)
@@ -908,7 +932,7 @@ private fun formatTimeAgo(dateString: String): String {
             diffInMillis < 60 * 60 * 1000 -> "${diffInMillis / (60 * 1000)}m ago"
             diffInMillis < 24 * 60 * 60 * 1000 -> "${diffInMillis / (60 * 60 * 1000)}h ago"
             diffInMillis < 7 * 24 * 60 * 60 * 1000 -> "${diffInMillis / (24 * 60 * 60 * 1000)}d ago"
-            else -> formatFullDate(dateString).split(" at")[0]
+            else -> formatFullDate(dateString)?.split(" at")?.get(0) ?: "Recently"
         }
     } catch (e: Exception) {
         "Recently"

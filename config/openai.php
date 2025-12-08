@@ -4,37 +4,42 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | OpenAI API Key and Organization
+    | Google Gemini API Key
     |--------------------------------------------------------------------------
     |
-    | Here you may specify your OpenAI API Key and organization. This will be
-    | used to authenticate with the OpenAI API - you can find your API key
-    | and organization on your OpenAI dashboard, at https://openai.com.
-    */
-
-    'api_key' => env('OPENAI_API_KEY'),
-    'organization' => env('OPENAI_ORGANIZATION'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | OpenAI API Project
-    |--------------------------------------------------------------------------
+    | Here you may specify your Google Gemini API Key. This will be
+    | used to authenticate with the Google Gemini API - you can find your API key
+    | on your Google AI Studio dashboard, at https://aistudio.google.com.
     |
-    | Here you may specify your OpenAI API project. This is used optionally in
-    | situations where you are using a legacy user API key and need association
-    | with a project. This is not required for the newer API keys.
+    | Note: We're using Google's OpenAI-compatible endpoint for Gemini.
+    | You can use GEMINI_API_KEY or OPENAI_API_KEY (for backward compatibility).
     */
-    'project' => env('OPENAI_PROJECT'),
+
+    'api_key' => env('GEMINI_API_KEY', env('OPENAI_API_KEY', 'AIzaSyC8MF40ez6A-_nHXF1Vd6aZ9tw9okjvrUg')),
+    'organization' => env('GEMINI_ORGANIZATION', env('OPENAI_ORGANIZATION')),
 
     /*
     |--------------------------------------------------------------------------
-    | OpenAI Base URL
+    | Google Gemini API Project
     |--------------------------------------------------------------------------
     |
-    | Here you may specify your OpenAI API base URL used to make requests. This
-    | is needed if using a custom API endpoint. Defaults to: api.openai.com/v1
+    | Here you may specify your Google Gemini API project. This is used optionally
+    | for project-based access control.
     */
-    'base_uri' => env('OPENAI_BASE_URL'),
+
+    'project' => env('GEMINI_PROJECT', env('OPENAI_PROJECT')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Gemini Base URL
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify your Google Gemini API base URL used to make requests.
+    | This uses Google's OpenAI-compatible endpoint for Gemini.
+    | Defaults to: https://generativelanguage.googleapis.com/v1beta/openai
+    */
+
+    'base_uri' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai'),
 
     /*
     |--------------------------------------------------------------------------

@@ -73,7 +73,7 @@ class ChatViewModel(private val chatRepository: ChatRepository) : ViewModel() {
         _messages.update { map ->
             map.mapValues { (_, list) ->
                 list.map {
-                    if (it.chatId == chatId && it.sender.id == currentUserId)
+                    if (it.chatId == chatId && it.sender.id.toString() == currentUserId)
                         it.copy(messageStatus = "SEEN")
                     else it
                 }
@@ -126,10 +126,10 @@ class ChatViewModel(private val chatRepository: ChatRepository) : ViewModel() {
     }
 
     private fun handleIncomingMessage(message: ChatMessage) {
-        val senderId = message.sender.id
+        val senderId = message.sender.id.toString()
         val myId = currentUserId ?: return
 
-        if (message.sender.id == myId || message.receiver.id == myId) {
+        if (message.sender.id.toString() == myId || message.receiver.id.toString() == myId) {
             addMessageToChat(message)
         }
 
@@ -182,7 +182,7 @@ class ChatViewModel(private val chatRepository: ChatRepository) : ViewModel() {
                     lastMessageStatus = "DELIVERED",
                     companyCode = message.companyCode,
                     lastMessageType = message.messageType,
-                    lastMessageSender = message.sender.id
+                                lastMessageSender = message.sender.id.toString()
                 )
                 Resource.Success((current + newChat))
             }

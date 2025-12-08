@@ -2,7 +2,8 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\Dashboard;
+use App\Filament\Widgets\ChatBotWidget; // Ensure this import exists or use full path
 use App\Filament\Pages\TaskBoard;
 use App\Filament\Resources\Departments\Widgets\StatsOverview;
 use Filament\Http\Middleware\Authenticate;
@@ -34,7 +35,7 @@ class AdminPanelProvider extends PanelProvider
 
             ->default()
             ->id('admin')
-            ->path('/')
+            ->path('admin')
             ->passwordReset()
             ->profile()
             ->login()
@@ -57,13 +58,17 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 StatsOverview::class,
-                \App\Filament\Resources\Employees\Widgets\StatsOverview::class,
+            \App\Filament\Resources\Employees\Widgets\StatsOverview::class,
             ])
             ->navigationGroups([
                 'Work space',
                 'Organization',
                 'HR Management',
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.widgets.chat-bot-widget'),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

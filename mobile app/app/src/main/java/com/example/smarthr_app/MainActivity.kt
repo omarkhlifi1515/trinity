@@ -73,51 +73,43 @@ fun SmartHRApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val dataStoreManager = DataStoreManager(context)
+    
+    // Initialize RetrofitInstance with context for automatic token injection
+    LaunchedEffect(Unit) {
+        com.example.smarthr_app.data.remote.RetrofitInstance.initialize(context)
+    }
+    
     val authRepository = AuthRepository(dataStoreManager)
-    val chatRepository = ChatRepository(dataStoreManager)
-    // You might need to add a factory for ViewModel if it fails, but default often works
-    val authViewModel: AuthViewModel = viewModel { AuthViewModel(authRepository) }
-    val chatViewModel : ChatViewModel = viewModel { ChatViewModel(chatRepository) }
+
+    // 1. Collect the User State (Used for deciding start destination)
+    val userState by authRepository.user.collectAsState(initial = null)
+    val isLoggedIn by authRepository.isLoggedIn.collectAsState(initial = false)
+
+    // ... (Keep your chatViewModel / notification logic here) ...
+
     var startDestination by remember { mutableStateOf<String?>(null) }
     var isInitialized by remember { mutableStateOf(false) }
 
-    val notificationEvent by chatViewModel.notificationEvent.collectAsState()
-
-    // Show notification
-    LaunchedEffect(notificationEvent) {
-        notificationEvent?.let { (title, message) ->
-            showNotification(context, title, message)
-            chatViewModel.clearNotificationEvent()
-        }
-    }
-
-    // Determine start destination
-    LaunchedEffect(Unit) {
+    // 2. Logic to determine start destination
+    LaunchedEffect(isLoggedIn, userState) {
         delay(100) // Allow DataStore to load
-
-        authRepository.isLoggedIn.collect { isLoggedIn ->
-            if (isLoggedIn) {
-                authRepository.user.collect { user ->
-                    // CHANGED: Logic to handle String roles instead of Enum
-                    startDestination = if (user?.role == "HR" || user?.role == "Admin") {
-                        Screen.HRDashboard.route
-                    } else {
-                        // Default to Employee Dashboard for everyone else
-                        Screen.EmployeeDashboard.route
-                    }
-                    isInitialized = true
-                }
+        if (isLoggedIn && userState != null) {
+            startDestination = if (userState?.role == "HR" || userState?.role == "Admin") {
+                Screen.HRDashboard.route
             } else {
-                startDestination = Screen.Login.route // Go straight to Login, skip Role Selection
-                isInitialized = true
+                Screen.EmployeeDashboard.route
             }
+        } else {
+            startDestination = Screen.Login.route
         }
+        isInitialized = true
     }
 
     if (isInitialized && startDestination != null) {
         NavGraph(
             navController = navController,
             startDestination = startDestination!!
+            // REMOVED: user = userState  <-- This line was causing the error
         )
     }
 }

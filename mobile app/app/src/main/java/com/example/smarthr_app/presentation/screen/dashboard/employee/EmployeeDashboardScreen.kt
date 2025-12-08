@@ -58,7 +58,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.smarthr_app.R
-import com.example.smarthr_app.data.model.User
+import com.example.smarthr_app.data.model.UserDto
 import com.example.smarthr_app.presentation.components.CompanyLockScreen
 import com.example.smarthr_app.presentation.theme.PrimaryPurple
 import com.example.smarthr_app.presentation.viewmodel.AttendanceViewModel
@@ -271,7 +271,7 @@ fun WaitingApprovalOverlay(
 
 @Composable
 fun HomeTab(
-    user: User?,
+    user: UserDto?,
     authViewModel: AuthViewModel,
     chatViewModel: ChatViewModel,
     onNavigateToProfile: () -> Unit,

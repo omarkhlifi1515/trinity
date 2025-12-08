@@ -234,8 +234,8 @@ fun HRLeaveManagementScreen(
                         items(filteredLeaves) { leave ->
                             HRLeaveCard(
                                 leave = leave,
-                                onApprove = { leaveViewModel.updateLeaveStatus(leave.id, "APPROVED") },
-                                onReject = { leaveViewModel.updateLeaveStatus(leave.id, "REJECTED") },
+                                onApprove = { leaveViewModel.updateLeaveStatus(leave.id.toString(), "APPROVED") },
+                                onReject = { leaveViewModel.updateLeaveStatus(leave.id.toString(), "REJECTED") },
                                 isLoading = leaveActionState is Resource.Loading
                             )
                         }
@@ -394,7 +394,7 @@ fun HRLeaveCard(
                             color = PrimaryPurple.copy(alpha = 0.1f)
                         ) {
                             Text(
-                                text = leave.type,
+                                text = leave.type ?: leave.leaveType,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = PrimaryPurple,
@@ -413,7 +413,7 @@ fun HRLeaveCard(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = leave.emergencyContact,
+                                text = leave.emergencyContact ?: "N/A",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -463,7 +463,7 @@ fun HRLeaveCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = leave.leaveDescription,
+                        text = leave.leaveDescription ?: leave.reason ?: "No reason provided",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -484,7 +484,7 @@ fun HRLeaveCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Applied on ${formatDisplayDate(leave.appliedAt)}",
+                    text = "Applied on ${if (leave.createdAt != null) formatDisplayDate(leave.createdAt) else "Unknown"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

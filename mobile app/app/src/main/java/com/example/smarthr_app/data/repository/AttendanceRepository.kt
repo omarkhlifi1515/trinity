@@ -20,7 +20,7 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
         radius: String
     ): Resource<OfficeLocationResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val request = OfficeLocationRequestDto(latitude, longitude, radius)
                 val response = RetrofitInstance.api.createOfficeLocation("Bearer $token", request)
@@ -46,7 +46,7 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
         radius: String
     ): Resource<OfficeLocationResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val request = OfficeLocationRequestDto(latitude, longitude, radius)
                 val response = RetrofitInstance.api.updateOfficeLocation("Bearer $token", locationId, request)
@@ -67,7 +67,7 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getCompanyOfficeLocation(): Resource<OfficeLocationResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getCompanyOfficeLocation("Bearer $token")
                 if (response.isSuccessful) {
@@ -92,7 +92,23 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
         longitude: String
     ): Resource<AttendanceResponseDto> {
         return try {
-            val token = dataStoreManager.token.first()
+            // Validate coordinates before sending
+            val lat = latitude.toDoubleOrNull()
+            val lng = longitude.toDoubleOrNull()
+            
+            if (lat == null || lng == null) {
+                return Resource.Error("Invalid coordinate format. Please try again.")
+            }
+            
+            if (lat == 0.0 && lng == 0.0) {
+                return Resource.Error("Invalid coordinates (0,0). Please enable GPS and try again.")
+            }
+            
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                return Resource.Error("Coordinates out of valid range. Please try again.")
+            }
+            
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val request = AttendanceRequestDto(type, latitude, longitude)
                 val response = RetrofitInstance.api.markAttendance("Bearer $token", request)
@@ -101,19 +117,22 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
                         Resource.Success(it)
                     } ?: Resource.Error("Attendance marked but no data received")
                 } else {
-                    Resource.Error("Failed to mark attendance: ${response.message()}")
+                    val errorBody = response.errorBody()?.string() ?: response.message()
+                    Resource.Error("Failed to mark attendance: $errorBody")
                 }
             } else {
                 Resource.Error("No authentication token found")
             }
+        } catch (e: NumberFormatException) {
+            Resource.Error("Invalid coordinate format. Please try again.")
         } catch (e: Exception) {
-            Resource.Error("Network error: ${e.message}")
+            Resource.Error("Network error: ${e.message ?: "Unknown error occurred"}")
         }
     }
 
     suspend fun getEmployeeAttendanceHistory(): Resource<List<AttendanceResponseDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getEmployeeAttendanceHistory("Bearer $token")
                 if (response.isSuccessful) {
@@ -133,7 +152,7 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun getCompanyAttendanceByDate(date: String? = null): Resource<List<AttendanceResponseDto>> {
         return try {
-            val token = dataStoreManager.token.first()
+            val token = dataStoreManager.authToken.first()
             if (token != null) {
                 val response = RetrofitInstance.api.getCompanyAttendanceByDate("Bearer $token", date)
                 if (response.isSuccessful) {

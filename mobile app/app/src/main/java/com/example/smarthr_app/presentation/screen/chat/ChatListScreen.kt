@@ -303,7 +303,7 @@ fun ChatListRow(chatItem: Chat, onNavigateChatScreen: (String, String, String) -
             .clickable(
                 onClick = {
                     onNavigateChatScreen(
-                        chatItem.user2.id,
+                        chatItem.user2.id.toString(),
                         Uri.encode(chatItem.user2.imageUrl ?: "https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_1280.png"),
                         chatItem.user2.name
                     )
@@ -330,7 +330,7 @@ fun ChatListRow(chatItem: Chat, onNavigateChatScreen: (String, String, String) -
             Text(chatItem.user2.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (chatItem.lastMessageSender == chatItem.user1.id) {
+                if (chatItem.lastMessageSender == chatItem.user1.id.toString()) {
                     val tickIcon = when (chatItem.lastMessageStatus) {
                         "SEEN" -> Icons.Default.DoneAll
                         "DELIVERED" -> Icons.Default.Done
@@ -364,7 +364,7 @@ fun ChatListRow(chatItem: Chat, onNavigateChatScreen: (String, String, String) -
                 color = Color.Gray,
                 fontSize = 12.sp
             )
-            if (chatItem.lastMessageSender != chatItem.user1.id && chatItem.lastMessageStatus != "SEEN") {
+            if (chatItem.lastMessageSender != chatItem.user1.id.toString() && chatItem.lastMessageStatus != "SEEN") {
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier

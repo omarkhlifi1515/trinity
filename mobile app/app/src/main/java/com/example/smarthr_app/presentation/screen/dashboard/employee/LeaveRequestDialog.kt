@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.BeachAccess
 import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MoneyOff
@@ -160,12 +161,13 @@ fun LeaveRequestDialog(
                                         Icon(
                                             imageVector = when (type) {
                                                 LeaveType.SICK -> Icons.Default.LocalHospital
-                                                LeaveType.CASUAL -> Icons.Default.BeachAccess
-                                                LeaveType.VACATION -> Icons.Default.Flight
+                                                LeaveType.ANNUAL -> Icons.Default.BeachAccess
+                                                LeaveType.PERSONAL -> Icons.Default.Person
+                                                LeaveType.EMERGENCY -> Icons.Default.Error
                                                 LeaveType.MATERNITY -> Icons.Default.ChildCare
                                                 LeaveType.PATERNITY -> Icons.Default.Person
                                                 LeaveType.UNPAID -> Icons.Default.MoneyOff
-                                                LeaveType.OTHERS -> Icons.Default.MoreHoriz
+                                                LeaveType.OTHER -> Icons.Default.MoreHoriz
                                             },
                                             contentDescription = null,
                                             modifier = Modifier.size(20.dp),
@@ -307,11 +309,12 @@ fun LeaveRequestDialog(
                     Button(
                         onClick = {
                             val leaveRequest = LeaveRequestDto(
-                                type = selectedLeaveType,
-                                emergencyContact = emergencyContact,
+                                leaveType = selectedLeaveType,
+                                emergencyContact = emergencyContact.takeIf { it.isNotBlank() },
                                 startDate = startDate,
                                 endDate = endDate,
-                                leaveDescription = leaveDescription
+                                reason = leaveDescription,
+                                leaveDescription = leaveDescription.takeIf { it.isNotBlank() }
                             )
                             onSubmit(leaveRequest)
                         },

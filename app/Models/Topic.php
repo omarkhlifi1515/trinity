@@ -23,7 +23,9 @@ class Topic extends Model
 
     public function receiver()
     {
-        return $this->morphTo();
+        // Always return a relationship instance - Eloquent requires this
+        // For AI type, the relationship will be null but the method must return a relationship
+        return $this->morphTo('receiver', 'receiver_type', 'receiver_id');
     }
 
     public function message()

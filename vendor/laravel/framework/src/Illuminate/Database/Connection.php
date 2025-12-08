@@ -646,14 +646,16 @@ class Connection implements ConnectionInterface
         return $this->withFreshQueryLog(function () use ($callback) {
             $this->pretending = true;
 
-            // Basically to make the database connection "pretend", we will just return
-            // the default values for all the query methods, then we will return an
-            // array of queries that were "executed" within the Closure callback.
-            $callback($this);
+            try {
+                // Basically to make the database connection "pretend", we will just return
+                // the default values for all the query methods, then we will return an
+                // array of queries that were "executed" within the Closure callback.
+                $callback($this);
 
-            $this->pretending = false;
-
-            return $this->queryLog;
+                return $this->queryLog;
+            } finally {
+                $this->pretending = false;
+            }
         });
     }
 
@@ -1048,7 +1050,7 @@ class Connection implements ConnectionInterface
     /**
      * Register a database query listener with the connection.
      *
-     * @param  \Closure  $callback
+     * @param  \Closure(\Illuminate\Database\Events\QueryExecuted)  $callback
      * @return void
      */
     public function listen(Closure $callback)
@@ -1101,6 +1103,8 @@ class Connection implements ConnectionInterface
      * @param  string|float|int|bool|null  $value
      * @param  bool  $binary
      * @return string
+     *
+     * @throws \RuntimeException
      */
     public function escape($value, $binary = false)
     {
@@ -1154,6 +1158,8 @@ class Connection implements ConnectionInterface
      *
      * @param  string  $value
      * @return string
+     *
+     * @throws \RuntimeException
      */
     protected function escapeBinary($value)
     {

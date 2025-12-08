@@ -14,14 +14,28 @@ class MessageObserver
      */
     public function created(Message $message): void
     {
-        //
+        // Skip notifications for AI chatbot messages
+        if ($message->sender_type === 'App\\Bots\\AI' || $message->topic->receiver_type === 'App\\Bots\\AI') {
+            return;
+        }
+
         $topic = $message->topic;
         $recipient = null;
-        if ($message->sender->is($topic->creator)) {
-            $recipient = $topic->receiver;
-        } elseif ($message->sender->is($topic->receiver)) {
-            $recipient = $topic->creator;
+        
+        // Only process if sender is a real model (not AI)
+        if ($message->sender && $topic->creator) {
+            if ($message->sender->is($topic->creator)) {
+                $recipient = $topic->receiver;
+            } elseif ($topic->receiver && $message->sender->is($topic->receiver)) {
+                $recipient = $topic->creator;
+            }
         }
+
+        // Only send notification if recipient is a real user/employee (not AI)
+        if (!$recipient || !($recipient instanceof User || $recipient instanceof Employee)) {
+            return;
+        }
+
         $url = MessageResource::getUrl('view', ['record' => $topic]);
 
         if ($recipient instanceof User && $message->sender instanceof Employee) {
@@ -30,8 +44,6 @@ class MessageObserver
             $parsed = parse_url(MessageResource::getUrl('view', ['record' => $topic]));
             $url = url('/portal' . $parsed['path']);
         }
-
-
 
         Notification::make()
             ->title('New message')
@@ -45,7 +57,6 @@ class MessageObserver
             ])
             ->info()
             ->sendToDatabase($recipient);
-
     }
 
     /**

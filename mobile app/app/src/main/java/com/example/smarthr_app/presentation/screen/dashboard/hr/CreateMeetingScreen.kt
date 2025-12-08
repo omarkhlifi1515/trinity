@@ -145,7 +145,7 @@ fun CreateMeetingScreen(
                     when (val empState = approvedEmployeesState) {
                         is Resource.Success -> {
                             selectedEmployees = empState.data.filter { employee ->
-                                meeting.participants.any { participant -> participant.id == employee.userId }
+                                meeting.participants.any { participant -> participant.id.toString() == employee.userId }
                             }
                         }
                         else -> {}

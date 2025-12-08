@@ -25,6 +25,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'company_code',
+        'waiting_company_code',
     ];
 
     /**
@@ -47,6 +49,14 @@ class User extends Authenticatable
     public function tasks()
     {
         return $this->morphMany(Task::class, 'assignee');
+    }
+
+    /**
+     * Get the company that this user belongs to
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_code', 'code');
     }
     /**
      * Get the attributes that should be cast.
