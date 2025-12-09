@@ -13,17 +13,27 @@ This guide will help you deploy your Trinity HRM application to Render.
 1. Make sure all your code is committed and pushed to GitHub
 2. Ensure you have a `render.yaml` file in the root directory (already created)
 
-## Step 2: Create a Database on Render
+## Step 2: Database Setup
 
-1. Go to your Render Dashboard
-2. Click "New +" → "PostgreSQL" (or MySQL if you prefer)
-3. Configure your database:
-   - Name: `trinity-hrm-db`
-   - Database: `trinity_hrm`
-   - User: Auto-generated
-   - Password: Auto-generated (save this!)
-   - Region: Choose closest to your users
-4. Note down the **Internal Database URL** and **External Database URL**
+✅ **Your database is already created!** Use these credentials:
+
+**Internal Database URL** (Use this for better performance):
+```
+postgresql://rinity_hrm_user:yv46EXgzxbAK3vBRod9SifxmHtS08pQX@dpg-d4s6qmmmcj7s73fhs4vg-a/rinity_hrm
+```
+
+**External Database URL**:
+```
+postgresql://rinity_hrm_user:yv46EXgzxbAK3vBRod9SifxmHtS08pQX@dpg-d4s6qmmmcj7s73fhs4vg-a.frankfurt-postgres.render.com/rinity_hrm
+```
+
+**Connection Details**:
+- Host (Internal): `dpg-d4s6qmmmcj7s73fhs4vg-a`
+- Host (External): `dpg-d4s6qmmmcj7s73fhs4vg-a.frankfurt-postgres.render.com`
+- Database: `rinity_hrm`
+- Username: `rinity_hrm_user`
+- Password: `yv46EXgzxbAK3vBRod9SifxmHtS08pQX`
+- Port: `5432`
 
 ## Step 3: Deploy the Web Service
 
@@ -62,12 +72,13 @@ APP_DEBUG=false
 APP_URL=https://your-app-name.onrender.com
 APP_TIMEZONE=UTC
 
-DB_CONNECTION=mysql
-DB_HOST=YOUR_DB_HOST
-DB_PORT=3306
-DB_DATABASE=trinity_hrm
-DB_USERNAME=YOUR_DB_USER
-DB_PASSWORD=YOUR_DB_PASSWORD
+# PostgreSQL Database Configuration
+DB_CONNECTION=pgsql
+DB_HOST=dpg-d4s6qmmmcj7s73fhs4vg-a
+DB_PORT=5432
+DB_DATABASE=rinity_hrm
+DB_USERNAME=rinity_hrm_user
+DB_PASSWORD=yv46EXgzxbAK3vBRod9SifxmHtS08pQX
 
 SESSION_DRIVER=database
 CACHE_STORE=database
@@ -76,6 +87,8 @@ QUEUE_CONNECTION=database
 LOG_CHANNEL=stack
 LOG_LEVEL=error
 ```
+
+**Note**: Use the **Internal Database Host** (`dpg-d4s6qmmmcj7s73fhs4vg-a`) for better performance when your web service is in the same region. If you're in a different region, use the external host: `dpg-d4s6qmmmcj7s73fhs4vg-a.frankfurt-postgres.render.com`
 
 ### Optional Variables (for ChatGPT Bot)
 
