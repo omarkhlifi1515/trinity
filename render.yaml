@@ -3,9 +3,8 @@ services:
     name: trinity-get-2-web
     env: node
     plan: free
-    rootDir: web
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: cd web && npm install && npm run build
+    startCommand: cd web && npm start
     envVars:
       - key: NODE_ENV
         value: production
