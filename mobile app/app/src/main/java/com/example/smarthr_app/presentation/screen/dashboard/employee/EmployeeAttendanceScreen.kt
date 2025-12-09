@@ -3,6 +3,7 @@ package com.example.smarthr_app.presentation.screen.dashboard.employee
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +26,7 @@ import com.example.smarthr_app.presentation.viewmodel.AttendanceViewModel
 import com.example.smarthr_app.utils.LocationHelper
 import com.example.smarthr_app.utils.Resource
 import com.example.smarthr_app.utils.ToastHelper
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -140,7 +142,41 @@ fun EmployeeAttendanceScreen(
             attendanceViewModel.loadOfficeLocation()
             attendanceViewModel.loadAttendanceHistory()
         }
-
+        
+        // Auto-refresh user profile to detect company acceptance
+        authViewModel.refreshProfile()
+    }
+    
+    // Auto-refresh user profile when on waitlist to detect company acceptance
+    LaunchedEffect(user?.waitingCompanyCode) {
+        if (!user?.waitingCompanyCode.isNullOrBlank() && user?.companyCode.isNullOrBlank()) {
+            // User is on waitlist - refresh every 30 seconds to check for acceptance
+            while (true) {
+                kotlinx.coroutines.delay(30000) // 30 seconds
+                // Get current user using flow.first() instead of collectAsState
+                val currentUser = authViewModel.user.first()
+                // Stop auto-refresh if user is accepted
+                if (!currentUser?.waitingCompanyCode.isNullOrBlank() && !currentUser?.companyCode.isNullOrBlank()) {
+                    // User was accepted - reload attendance data
+                    attendanceViewModel.loadOfficeLocation()
+                    attendanceViewModel.loadAttendanceHistory()
+                    break
+                }
+                if (currentUser?.waitingCompanyCode.isNullOrBlank()) {
+                    break
+                }
+                authViewModel.refreshProfile()
+            }
+        }
+    }
+    
+    // Detect when company code changes (user was accepted)
+    LaunchedEffect(user?.companyCode) {
+        if (!user?.companyCode.isNullOrBlank()) {
+            // User just joined a company - refresh attendance data
+            attendanceViewModel.loadOfficeLocation()
+            attendanceViewModel.loadAttendanceHistory()
+        }
     }
 
     // Handle mark attendance response
@@ -479,7 +515,14 @@ private suspend fun markAttendance(
 ) {
     val currentLocation = locationHelper.getCurrentLocation()
     if (currentLocation == null) {
-        ToastHelper.showErrorToast(context, "Unable to get current location. Please enable GPS and try again.")
+        ToastHelper.showErrorToast(
+            context, 
+            "Unable to get your location. Please:\n" +
+            "1. Enable GPS/Location services\n" +
+            "2. Grant location permissions to the app\n" +
+            "3. Make sure you're outdoors or near a window\n" +
+            "4. Try again"
+        )
         return
     }
 
@@ -488,7 +531,13 @@ private suspend fun markAttendance(
     val currentLng = currentLocation.longitude
     
     if (currentLat == 0.0 && currentLng == 0.0) {
-        ToastHelper.showErrorToast(context, "Invalid location coordinates. Please enable GPS and try again.")
+        ToastHelper.showErrorToast(
+            context, 
+            "Invalid location detected. Please:\n" +
+            "1. Enable GPS/Location services in settings\n" +
+            "2. Move to an area with better GPS signal\n" +
+            "3. Try again"
+        )
         return
     }
     
@@ -497,10 +546,15 @@ private suspend fun markAttendance(
         return
     }
 
-    // Check location accuracy
-    if (currentLocation.accuracy > 10000) {
-        ToastHelper.showErrorToast(context, "Location accuracy is too low (${currentLocation.accuracy.toInt()}m). Please wait for better GPS signal.")
-        return
+    // More lenient accuracy check - warn but don't block if accuracy is reasonable
+    // Allow up to 50km accuracy (for testing/development, poor GPS conditions)
+    if (currentLocation.accuracy > 0 && currentLocation.accuracy > 50000) {
+        ToastHelper.showErrorToast(
+            context, 
+            "Location accuracy is very low (${(currentLocation.accuracy / 1000).toInt()}km). " +
+            "For better results, wait for GPS signal to improve or move outdoors."
+        )
+        // Don't return - allow them to proceed with low accuracy
     }
 
     val currentLatString = String.format("%.6f", currentLat)

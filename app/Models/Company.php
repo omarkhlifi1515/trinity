@@ -37,5 +37,13 @@ class Company extends Model
     {
         return $this->hasMany(User::class, 'company_code', 'code');
     }
+
+    /**
+     * Get all users waiting to join this company
+     */
+    public function waitlistUsers()
+    {
+        return $this->hasMany(User::class, 'waiting_company_code', 'code');
+    }
 }
 

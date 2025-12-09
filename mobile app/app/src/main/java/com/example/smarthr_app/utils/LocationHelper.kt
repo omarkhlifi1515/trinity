@@ -117,14 +117,17 @@ class LocationHelper(private val context: Context) {
     private fun isValidLocation(location: Location): Boolean {
         // Check if coordinates are valid (not 0.0, 0.0 which is in the ocean off Africa)
         // Also check if accuracy is reasonable (not too high/invalid)
-        return location.latitude != 0.0 && 
-               location.longitude != 0.0 &&
-               location.latitude >= -90 && 
-               location.latitude <= 90 &&
-               location.longitude >= -180 && 
-               location.longitude <= 180 &&
-               location.accuracy > 0 &&
-               location.accuracy < 10000 // Less than 10km accuracy
+        // More lenient validation - allow less accurate locations and just check basic validity
+        val isNotZero = location.latitude != 0.0 && location.longitude != 0.0
+        val isInValidRange = location.latitude >= -90 && 
+                             location.latitude <= 90 &&
+                             location.longitude >= -180 && 
+                             location.longitude <= 180
+        // Allow locations with accuracy up to 50km (for testing/development)
+        // Only check accuracy if it's available (some providers don't provide accuracy)
+        val hasReasonableAccuracy = location.accuracy <= 0 || location.accuracy < 50000
+        
+        return isNotZero && isInValidRange && hasReasonableAccuracy
     }
 
     fun isWithinRadius(

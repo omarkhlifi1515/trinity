@@ -60,6 +60,7 @@ import com.example.smarthr_app.presentation.viewmodel.AuthViewModel
 import com.example.smarthr_app.utils.Resource
 import com.example.smarthr_app.utils.ToastHelper
 import com.example.smarthr_app.utils.ValidationUtils
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,6 +145,34 @@ fun EmployeeCompanyManagementScreen(
     }
 
     // Monitor user changes to detect when status is updated
+    // Auto-refresh when user is on waitlist to detect company acceptance
+    LaunchedEffect(user?.waitingCompanyCode) {
+        if (!user?.waitingCompanyCode.isNullOrBlank() && user?.companyCode.isNullOrBlank()) {
+            // User is on waitlist - refresh every 20 seconds to check for acceptance
+            while (true) {
+                kotlinx.coroutines.delay(20000) // 20 seconds
+                // Get current user using flow.first() instead of collectAsState
+                val currentUser = authViewModel.user.first()
+                // Stop auto-refresh if user is accepted
+                if (!currentUser?.waitingCompanyCode.isNullOrBlank() && !currentUser?.companyCode.isNullOrBlank()) {
+                    break
+                }
+                if (currentUser?.waitingCompanyCode.isNullOrBlank()) {
+                    break
+                }
+                authViewModel.refreshProfile()
+            }
+        }
+    }
+    
+    // Detect when company code changes (user was accepted)
+    LaunchedEffect(user?.companyCode) {
+        if (!user?.companyCode.isNullOrBlank()) {
+            // User was just accepted - refresh profile to ensure we have latest data
+            authViewModel.refreshProfile()
+        }
+    }
+    
     LaunchedEffect(user?.waitingCompanyCode, user?.companyCode) {
         if (isRefreshingProfile) {
             // Stop the loading indicator when user data is refreshed
@@ -237,7 +266,7 @@ fun EmployeeCompanyManagementScreen(
                                             color = Color(0xFF4CAF50)
                                         )
                                         Text(
-                                            text = "Company Code: ${user?.companyCode}",
+                                            text = "Department: ${user?.companyCode}",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -283,7 +312,7 @@ fun EmployeeCompanyManagementScreen(
                                             color = Color(0xFFFF9800)
                                         )
                                         Text(
-                                            text = "Company Code: ${user?.waitingCompanyCode}",
+                                            text = "Department: ${user?.waitingCompanyCode}",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -356,7 +385,7 @@ fun EmployeeCompanyManagementScreen(
                             modifier = Modifier.padding(20.dp)
                         ) {
                             Text(
-                                text = "Join a Company",
+                                text = "Join a Department",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryPurple
@@ -365,22 +394,22 @@ fun EmployeeCompanyManagementScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "Enter the company code provided by your HR to join the company.",
+                                text = "Enter the department name to join the department.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Company Code Input
+                            // Department Name Input (Company Code is Department Name)
                             OutlinedTextField(
                                 value = companyCode,
                                 onValueChange = { companyCode = it },
-                                label = { Text("Company Code") },
+                                label = { Text("Department Name") },
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                                 supportingText = {
-                                    Text("Ask your HR for the company code")
+                                    Text("Enter the department name (e.g., ENGINEERING, HR, SALES)")
                                 },
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = PrimaryPurple,
@@ -523,7 +552,7 @@ fun EmployeeCompanyManagementScreen(
             },
             text = {
                 Text(
-                    text = "Are you sure you want to remove your request to join ${user?.waitingCompanyCode}?",
+                    text = "Are you sure you want to remove your request to join department ${user?.waitingCompanyCode}?",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },

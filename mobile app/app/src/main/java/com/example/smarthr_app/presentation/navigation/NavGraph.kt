@@ -107,6 +107,7 @@ fun NavGraph(
             LoginScreen(
                 viewModel = authViewModel,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToRegister = { navController.navigate(Screen.Register.route) },
                 onNavigateToHRDashboard = {
                     navController.navigate(Screen.HRDashboard.route) {
                         popUpTo(Screen.RoleSelection.route) { inclusive = true }

@@ -4,7 +4,6 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\TaskBoard;
-use App\Filament\Widgets\ChatBotWidget; // Ensure this import exists or use full path
 
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
@@ -61,10 +60,6 @@ class EmployeePanelProvider extends PanelProvider
             ->widgets([
                 AllCalendarWidget::class,
             ])
-            ->renderHook(
-                PanelsRenderHook::BODY_END,
-                fn () => view('filament.widgets.chat-bot-widget'),
-            )
             ->navigationGroups([
                 'Work space'
             ])

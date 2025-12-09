@@ -20,6 +20,15 @@ It allows you to create a widget with a calendar with support for **multiple** m
 ![Showcase 01](https://github.com/GuavaCZ/calendar/raw/main/docs/images/showcase_01.png)
 ![Showcase 02](https://github.com/GuavaCZ/calendar/raw/main/docs/images/showcase_02.png)
 
+
+
+https://github.com/user-attachments/assets/fc7828ab-ccd2-4252-942a-9679af1e7687
+
+<video width="320" height="240" controls>
+  <source src="https://github.com/user-attachments/assets/fc7828ab-ccd2-4252-942a-9679af1e7687" type="video/mp4">
+</video>
+
+
 <video width="320" height="240" controls>
   <source src="https://github.com/GuavaCZ/calendar/raw/main/docs/images/demo_preview.mp4" type="video/mp4">
 </video>
@@ -96,7 +105,7 @@ php artisan make:filament-widget
 
 The widget class should look like this:
 ```php
-use \Guava\Calendar\Widgets\CalendarWidget;
+use \Guava\Calendar\Filament\CalendarWidget;
 
 class MyCalendarWidget extends CalendarWidget
 {
@@ -234,6 +243,14 @@ Sets the title of the event that is rendered in the calendar.
 ```php
 CalendarEvent::make()->title('My event');
 ```
+
+To output Html in the title pass in a `HtmlString` or other class that implements `Htmlable` :
+
+```php
+CalendarEvent::make()
+->title(new HtmlString('<b>My Event</b>'));
+```
+
 
 #### Customizing the start/end date
 Sets the start or end date (and time) of the calendar in the calendar.
@@ -1027,10 +1044,19 @@ To handle the callback, override the `onEventDrop` method and implement your own
 use Illuminate\Database\Eloquent\Model;
 use Guava\Calendar\ValueObjects\EventDropInfo;
 
-protected function onEventDrop(EventDropInfo $info, Model $event): void
+protected function onEventDrop(EventDropInfo $info, Model $event): bool
 {
-    // Validate the data and handle the event
-    // Most likely you will want to update the event with the new start /end dates to persist the drag & drop in the database
+     // Access the updated dates using getter methods
+    $newStart = $info->event->getStart();
+    $newEnd = $info->event->getEnd();
+      // Update the event with the new start/end dates to persist the drag & drop
+    $event->update([
+        'start_time' => $newStart,
+        'end_time' => $newEnd,
+    ]);
+     // Return true to accept the drop and keep the event in the new position
+    return true;
+    
 }
 ```
 

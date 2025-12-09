@@ -97,15 +97,17 @@ class AttendanceRepository(private val dataStoreManager: DataStoreManager) {
             val lng = longitude.toDoubleOrNull()
             
             if (lat == null || lng == null) {
-                return Resource.Error("Invalid coordinate format. Please try again.")
+                return Resource.Error("Invalid coordinate format. Please enable location permissions and try again.")
             }
             
+            // More lenient validation - allow coordinates even if they seem unusual
+            // Only reject truly invalid ones
             if (lat == 0.0 && lng == 0.0) {
-                return Resource.Error("Invalid coordinates (0,0). Please enable GPS and try again.")
+                return Resource.Error("Unable to get your location. Please:\n1. Enable GPS/Location services\n2. Grant location permissions\n3. Try again")
             }
             
             if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                return Resource.Error("Coordinates out of valid range. Please try again.")
+                return Resource.Error("Location coordinates are out of valid range. Please try again.")
             }
             
             val token = dataStoreManager.authToken.first()

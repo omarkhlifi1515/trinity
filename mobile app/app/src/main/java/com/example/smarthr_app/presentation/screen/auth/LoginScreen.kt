@@ -1,8 +1,5 @@
 package com.example.smarthr_app.presentation.screen.auth
 
-import android.app.Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,14 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.smarthr_app.R
-import com.example.smarthr_app.data.model.GoogleLoginRequest
 import com.example.smarthr_app.data.model.LoginRequest
 import com.example.smarthr_app.presentation.theme.PrimaryPurple
 import com.example.smarthr_app.presentation.theme.SecondaryPurple
@@ -33,9 +27,6 @@ import com.example.smarthr_app.presentation.viewmodel.AuthViewModel
 import com.example.smarthr_app.utils.Resource
 import com.example.smarthr_app.utils.ToastHelper
 import com.example.smarthr_app.utils.ValidationUtils
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,40 +34,12 @@ import kotlinx.coroutines.delay
 fun LoginScreen(
     viewModel: AuthViewModel,
     onNavigateBack: () -> Unit,
+    onNavigateToRegister: () -> Unit,
     onNavigateToHRDashboard: () -> Unit,
     onNavigateToEmployeeDashboard: () -> Unit
     // user: UserDto?  <-- THIS HAS BEEN REMOVED
 ) {
     val context = LocalContext.current
-
-    val googleSignInClient = remember {
-        GoogleSignIn.getClient(
-            context,
-            GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(context.getString(R.string.web_client_id))
-                .requestEmail()
-                .build()
-        )
-    }
-
-    val googleSignInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account.idToken
-                if (idToken != null) {
-                    viewModel.loginWithGoogle(GoogleLoginRequest(idToken))
-                } else {
-                    ToastHelper.showErrorToast(context, "Google Sign-In failed: idToken is null")
-                }
-            } catch (e: ApiException) {
-                ToastHelper.showErrorToast(context, "Google Sign-In error: ${e.message}")
-            }
-        }
-    }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -87,7 +50,6 @@ fun LoginScreen(
     var passwordError by remember { mutableStateOf("") }
 
     val authState by viewModel.authState.collectAsState(initial = null)
-    val googleAuthState by viewModel.googleLoginAuthState.collectAsState(initial = null)
 
     // Handle login result
     LaunchedEffect(authState) {
@@ -109,24 +71,6 @@ fun LoginScreen(
         }
     }
 
-    LaunchedEffect(googleAuthState) {
-        when (val currentState = googleAuthState) {
-            is Resource.Success -> {
-                ToastHelper.showSuccessToast(context, "Login successful!")
-                delay(500)
-                if (currentState.data.user.role == "ROLE_HR") {
-                    onNavigateToHRDashboard()
-                } else {
-                    onNavigateToEmployeeDashboard()
-                }
-                viewModel.clearAuthState()
-            }
-            is Resource.Error -> {
-                ToastHelper.showErrorToast(context, currentState.message)
-            }
-            else -> {}
-        }
-    }
 
     // Real-time validation
     LaunchedEffect(email) {
@@ -234,7 +178,91 @@ fun LoginScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        Spacer(modifier = Modifier.height(32.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Connection Mode Toggle
+                        var connectionMode by remember { mutableStateOf("online") }
+                        val contextForDataStore = LocalContext.current
+                        val dataStoreManager = remember { 
+                            com.example.smarthr_app.data.local.DataStoreManager(contextForDataStore) 
+                        }
+                        
+                        LaunchedEffect(Unit) {
+                            connectionMode = dataStoreManager.getConnectionMode()
+                        }
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Connection Mode:",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Row(
+                                modifier = Modifier
+                                    .background(
+                                        color = PrimaryPurple.copy(alpha = 0.1f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(4.dp)
+                            ) {
+                                // Online Mode Button
+                                Button(
+                                    onClick = {
+                                        connectionMode = "online"
+                                        viewModel.setConnectionMode("online")
+                                    },
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (connectionMode == "online") 
+                                            PrimaryPurple else Color.Transparent,
+                                        contentColor = if (connectionMode == "online") 
+                                            Color.White else PrimaryPurple
+                                    ),
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = if (connectionMode == "online") 4.dp else 0.dp
+                                    )
+                                ) {
+                                    Text("Online", style = MaterialTheme.typography.labelSmall)
+                                }
+                                
+                                // Offline Mode Button
+                                Button(
+                                    onClick = {
+                                        connectionMode = "offline"
+                                        viewModel.setConnectionMode("offline")
+                                    },
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (connectionMode == "offline") 
+                                            PrimaryPurple else Color.Transparent,
+                                        contentColor = if (connectionMode == "offline") 
+                                            Color.White else PrimaryPurple
+                                    ),
+                                    elevation = ButtonDefaults.buttonElevation(
+                                        defaultElevation = if (connectionMode == "offline") 4.dp else 0.dp
+                                    )
+                                ) {
+                                    Text("Offline", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                        
+                        if (connectionMode == "offline") {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "ℹ️ Offline mode connects directly to Supabase",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Email Field
                         OutlinedTextField(
@@ -321,10 +349,11 @@ fun LoginScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Register Button
                         OutlinedButton(
                             onClick = {
-                                googleSignInClient.signOut()
-                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                                onNavigateToRegister()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -335,27 +364,12 @@ fun LoginScreen(
                             ),
                             border = ButtonDefaults.outlinedButtonBorder
                         ) {
-                            if(googleAuthState is Resource.Loading){
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.Black
-                                )
-                            }
-                            else {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.google),
-                                    contentDescription = "Google",
-                                    tint = Color.Unspecified,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Sign in with Google",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.Black,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                text = "Don't have an account? Register",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = PrimaryPurple,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

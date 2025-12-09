@@ -1,3 +1,6 @@
+{{-- Custom ChatGPT Bot View - Matches Old Chatbot Format --}}
+{{-- After installing the package, copy this to: resources/views/vendor/filament-chatgpt-bot/components/chatgpt-bot.blade.php --}}
+
 <div
     x-data="{
         isOpen: false,
@@ -22,10 +25,10 @@
             this.isLoading = true;
 
             try {
-                // 2. Send to the route defined in your web.php
+                // 2. Send to the package's chat endpoint
                 const csrfToken = document.head.querySelector('meta[name=csrf-token]')?.content || '';
                 
-                const response = await fetch('/dashboard/chat', {
+                const response = await fetch('/filament-chatgpt-bot/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -42,7 +45,6 @@
                 // Handle rate limiting (429)
                 if (response.status === 429) {
                     this.rateLimited = true;
-                    // Try to get retry-after from headers or response body
                     const retryAfterHeader = response.headers.get('Retry-After');
                     const retryAfterBody = data.retry_after;
                     const retrySeconds = retryAfterHeader ? parseInt(retryAfterHeader) : 
@@ -51,7 +53,6 @@
                     this.retryAfter = retrySeconds;
                     this.startRetryTimer();
                     
-                    // Use the error message from the server (it explains if it's Google Gemini or server limit)
                     throw new Error(data.error || `Rate limit exceeded. Please wait ${retrySeconds} seconds before trying again.`);
                 }
 
@@ -60,10 +61,10 @@
                 }
 
                 // 3. Add bot response to UI
-                if (data.bot_message && data.bot_message.content) {
+                if (data.reply || data.message) {
                     this.messages.push({
                         role: 'bot',
-                        content: data.bot_message.content
+                        content: data.reply || data.message
                     });
                     this.rateLimited = false;
                     this.retryAfter = null;
@@ -79,9 +80,7 @@
                 console.error('Chat Error:', error);
                 const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
                 
-                // Show error message - rate limit messages are updated by timer
                 if (this.rateLimited && this.retryAfter) {
-                    // Show rate limit message with countdown (will be updated by timer)
                     const lastSystemMsg = this.messages.findLast(msg => msg.role === 'system');
                     if (!lastSystemMsg || !lastSystemMsg.content.includes('Rate limit')) {
                         this.messages.push({
@@ -90,7 +89,6 @@
                         });
                     }
                 } else if (!errorMessage.includes('Rate limit') && !errorMessage.includes('rate limit')) {
-                    // Show non-rate-limit errors normally
                     this.messages.push({
                         role: 'system',
                         content: errorMessage
@@ -98,7 +96,6 @@
                 }
             } finally {
                 this.isLoading = false;
-                // Scroll to bottom
                 this.$nextTick(() => {
                     const chatBox = this.$refs.chatBox;
                     chatBox.scrollTop = chatBox.scrollHeight;
@@ -112,7 +109,6 @@
             this.retryTimer = setInterval(() => {
                 if (this.retryAfter > 0) {
                     this.retryAfter--;
-                    // Update the last system message if it exists
                     const lastMsg = this.messages[this.messages.length - 1];
                     if (lastMsg && lastMsg.role === 'system' && lastMsg.content.includes('Rate limit')) {
                         lastMsg.content = `Rate limit exceeded. Please wait ${this.retryAfter} seconds before trying again.`;
@@ -122,7 +118,6 @@
                     this.retryAfter = null;
                     clearInterval(this.retryTimer);
                     this.retryTimer = null;
-                    // Remove rate limit message
                     this.messages = this.messages.filter(msg => !(msg.role === 'system' && msg.content.includes('Rate limit')));
                 }
             }, 1000);
@@ -209,3 +204,4 @@
         </svg>
     </button>
 </div>
+

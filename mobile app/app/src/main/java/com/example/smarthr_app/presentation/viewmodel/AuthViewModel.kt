@@ -59,7 +59,30 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun registerUser(request: UserRegisterRequest) {
         viewModelScope.launch {
             _registerState.value = Resource.Loading()
-            _registerState.value = repository.register(request)
+            val result = repository.register(request)
+            _registerState.value = result
+            
+            // After successful registration, auto-login if needed
+            // This ensures token is saved properly
+            if (result is Resource.Success) {
+                // For online mode, registration might not return token
+                // So we need to auto-login to get the token
+                try {
+                    val loginResult = repository.login(
+                        com.example.smarthr_app.data.model.LoginRequest(
+                            email = request.email,
+                            password = request.password
+                        )
+                    )
+                    // If auto-login succeeds, update register state with login response
+                    if (loginResult is Resource.Success) {
+                        // Token is now saved, user data updated
+                    }
+                } catch (e: Exception) {
+                    // Auto-login failed, but registration succeeded
+                    // User can manually login
+                }
+            }
         }
     }
 
@@ -120,6 +143,16 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             // Refresh is silent - just updates the user flow
         }
     }
+    
+    // Auto-refresh profile periodically (especially useful when waiting for company approval)
+    fun startAutoRefresh(intervalSeconds: Long = 30) {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(intervalSeconds * 1000)
+                repository.refreshProfile()
+            }
+        }
+    }
 
     fun clearUpdateCompanyState() {
         _updateCompanyState.value = null
@@ -175,5 +208,12 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
     fun clearUploadImageState() {
         _uploadImageState.value = null
+    }
+    
+    // Connection mode management
+    fun setConnectionMode(mode: String) {
+        viewModelScope.launch {
+            repository.setConnectionMode(mode)
+        }
     }
 }

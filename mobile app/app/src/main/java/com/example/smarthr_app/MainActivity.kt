@@ -75,8 +75,10 @@ fun SmartHRApp() {
     val dataStoreManager = DataStoreManager(context)
     
     // Initialize RetrofitInstance with context for automatic token injection
+    // Initialize SupabaseInstance for offline mode
     LaunchedEffect(Unit) {
         com.example.smarthr_app.data.remote.RetrofitInstance.initialize(context)
+        com.example.smarthr_app.data.remote.SupabaseInstance.initialize(context)
     }
     
     val authRepository = AuthRepository(dataStoreManager)

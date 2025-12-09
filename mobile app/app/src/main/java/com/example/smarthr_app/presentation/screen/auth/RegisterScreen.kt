@@ -313,7 +313,91 @@ fun RegisterScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Connection Mode Toggle
+                    var connectionMode by remember { mutableStateOf("online") }
+                    val contextForDataStore = LocalContext.current
+                    val dataStoreManager = remember(contextForDataStore) { 
+                        com.example.smarthr_app.data.local.DataStoreManager(contextForDataStore) 
+                    }
+                    
+                    LaunchedEffect(Unit) {
+                        connectionMode = dataStoreManager.getConnectionMode()
+                    }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Mode:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Row(
+                            modifier = Modifier
+                                .background(
+                                    color = PrimaryPurple.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(4.dp)
+                        ) {
+                            // Online Mode Button
+                            Button(
+                                onClick = {
+                                    connectionMode = "online"
+                                    viewModel.setConnectionMode("online")
+                                },
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (connectionMode == "online") 
+                                        PrimaryPurple else Color.Transparent,
+                                    contentColor = if (connectionMode == "online") 
+                                        Color.White else PrimaryPurple
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = if (connectionMode == "online") 4.dp else 0.dp
+                                )
+                            ) {
+                                Text("Online", style = MaterialTheme.typography.labelSmall)
+                            }
+                            
+                            // Offline Mode Button
+                            Button(
+                                onClick = {
+                                    connectionMode = "offline"
+                                    viewModel.setConnectionMode("offline")
+                                },
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (connectionMode == "offline") 
+                                        PrimaryPurple else Color.Transparent,
+                                    contentColor = if (connectionMode == "offline") 
+                                        Color.White else PrimaryPurple
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = if (connectionMode == "offline") 4.dp else 0.dp
+                                )
+                            ) {
+                                Text("Offline", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                    
+                    if (connectionMode == "offline") {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "ℹ️ Offline mode: Direct Supabase connection",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Role Selection
                     Text(
@@ -427,9 +511,7 @@ fun RegisterScreen(
                         isError = passwordError.isNotEmpty(),
                         supportingText = if (passwordError.isNotEmpty()) {
                             { Text(passwordError, color = MaterialTheme.colorScheme.error) }
-                        } else {
-                            { Text("Min 8 chars: A-Z, a-z, 0-9, special char") }
-                        },
+                        } else null,
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(

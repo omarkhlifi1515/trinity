@@ -159,6 +159,7 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         ),
         'O' =>
         array (
+            'Orhanerday\\OpenAi\\' => 18,
             'OpenSpout\\' => 10,
             'OpenAI\\Laravel\\' => 15,
             'OpenAI\\' => 7,
@@ -203,6 +204,7 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         array (
             'Illuminate\\Support\\' => 19,
             'Illuminate\\' => 11,
+            'Icetalker\\FilamentChatgptBot\\' => 29,
         ),
         'H' =>
         array (
@@ -563,6 +565,10 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         array (
             0 => __DIR__ . '/..' . '/phpstan/phpdoc-parser/src',
         ),
+        'Orhanerday\\OpenAi\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/orhanerday/open-ai/src',
+        ),
         'OpenSpout\\' =>
         array (
             0 => __DIR__ . '/..' . '/openspout/openspout/src',
@@ -672,6 +678,10 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         'Illuminate\\' =>
         array (
             0 => __DIR__ . '/..' . '/laravel/framework/src/Illuminate',
+        ),
+        'Icetalker\\FilamentChatgptBot\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/icetalker/filament-chatgpt-bot/src',
         ),
         'Http\\Message\\MultipartStream\\' =>
         array (
@@ -877,6 +887,15 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         'App\\Filament\\Resources\\Attendances\\Pages\\ListAttendances' => __DIR__ . '/../..' . '/app/Filament/Resources/Attendances/Pages/ListAttendances.php',
         'App\\Filament\\Resources\\Attendances\\Pages\\ViewAttendance' => __DIR__ . '/../..' . '/app/Filament/Resources/Attendances/Pages/ViewAttendance.php',
         'App\\Filament\\Resources\\Attendances\\Schemas\\AttendanceForm' => __DIR__ . '/../..' . '/app/Filament/Resources/Attendances/Schemas/AttendanceForm.php',
+        'App\\Filament\\Resources\\Companies\\CompanyResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/CompanyResource.php',
+        'App\\Filament\\Resources\\Companies\\CompanyResource\\RelationManagers\\MembersRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/CompanyResource/RelationManagers/MembersRelationManager.php',
+        'App\\Filament\\Resources\\Companies\\CompanyResource\\RelationManagers\\WaitlistUsersRelationManager' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/CompanyResource/RelationManagers/WaitlistUsersRelationManager.php',
+        'App\\Filament\\Resources\\Companies\\Pages\\CreateCompany' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/Pages/CreateCompany.php',
+        'App\\Filament\\Resources\\Companies\\Pages\\EditCompany' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/Pages/EditCompany.php',
+        'App\\Filament\\Resources\\Companies\\Pages\\ListCompanies' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/Pages/ListCompanies.php',
+        'App\\Filament\\Resources\\Companies\\Pages\\ViewCompany' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/Pages/ViewCompany.php',
+        'App\\Filament\\Resources\\Companies\\Schemas\\CompanyForm' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/Schemas/CompanyForm.php',
+        'App\\Filament\\Resources\\Companies\\Schemas\\CompanyTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Companies/Schemas/CompanyTable.php',
         'App\\Filament\\Resources\\Departments\\DepartmentResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Departments/DepartmentResource.php',
         'App\\Filament\\Resources\\Departments\\Pages\\CreateDepartment' => __DIR__ . '/../..' . '/app/Filament/Resources/Departments/Pages/CreateDepartment.php',
         'App\\Filament\\Resources\\Departments\\Pages\\EditDepartment' => __DIR__ . '/../..' . '/app/Filament/Resources/Departments/Pages/EditDepartment.php',
@@ -912,10 +931,9 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         'App\\Filament\\Resources\\Payrolls\\Schema\\PayrollForm' => __DIR__ . '/../..' . '/app/Filament/Resources/Payrolls/Schema/PayrollForm.php',
         'App\\Filament\\Resources\\Payrolls\\Schema\\PayrollTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Payrolls/Schema/PayrollTable.php',
         'App\\Filament\\Widgets\\AllCalendarWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/AllCalendarWidget.php',
-        'App\\Filament\\Widgets\\ChatBotWidget' => __DIR__ . '/../..' . '/app/Filament/Widgets/ChatBotWidget.php',
-        'App\\Http\\Controllers\\ChatController' => __DIR__ . '/../..' . '/app/Http/Controllers/ChatController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Models\\Attendance' => __DIR__ . '/../..' . '/app/Models/Attendance.php',
+        'App\\Models\\Company' => __DIR__ . '/../..' . '/app/Models/Company.php',
         'App\\Models\\Department' => __DIR__ . '/../..' . '/app/Models/Department.php',
         'App\\Models\\Employee' => __DIR__ . '/../..' . '/app/Models/Employee.php',
         'App\\Models\\Event' => __DIR__ . '/../..' . '/app/Models/Event.php',
@@ -3154,6 +3172,9 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         'Http\\Message\\MultipartStream\\CustomMimetypeHelper' => __DIR__ . '/..' . '/php-http/multipart-stream-builder/src/CustomMimetypeHelper.php',
         'Http\\Message\\MultipartStream\\MimetypeHelper' => __DIR__ . '/..' . '/php-http/multipart-stream-builder/src/MimetypeHelper.php',
         'Http\\Message\\MultipartStream\\MultipartStreamBuilder' => __DIR__ . '/..' . '/php-http/multipart-stream-builder/src/MultipartStreamBuilder.php',
+        'Icetalker\\FilamentChatgptBot\\Components\\ChatgptBot' => __DIR__ . '/..' . '/icetalker/filament-chatgpt-bot/src/Components/ChatgptBot.php',
+        'Icetalker\\FilamentChatgptBot\\FilamentChatgptBotServiceProvider' => __DIR__ . '/..' . '/icetalker/filament-chatgpt-bot/src/FilamentChatgptBotServiceProvider.php',
+        'Icetalker\\FilamentChatgptBot\\OpenAI' => __DIR__ . '/..' . '/icetalker/filament-chatgpt-bot/src/OpenAI.php',
         'Illuminate\\Auth\\Access\\AuthorizationException' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Auth/Access/AuthorizationException.php',
         'Illuminate\\Auth\\Access\\Events\\GateEvaluated' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Auth/Access/Events/GateEvaluated.php',
         'Illuminate\\Auth\\Access\\Gate' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Auth/Access/Gate.php',
@@ -6473,6 +6494,8 @@ class ComposerStaticInit8278957aaea6e3f6929ab09a4caf89ea
         'OpenSpout\\Writer\\XLSX\\Options\\WorkbookProtection' => __DIR__ . '/..' . '/openspout/openspout/src/Writer/XLSX/Options/WorkbookProtection.php',
         'OpenSpout\\Writer\\XLSX\\Properties' => __DIR__ . '/..' . '/openspout/openspout/src/Writer/XLSX/Properties.php',
         'OpenSpout\\Writer\\XLSX\\Writer' => __DIR__ . '/..' . '/openspout/openspout/src/Writer/XLSX/Writer.php',
+        'Orhanerday\\OpenAi\\OpenAi' => __DIR__ . '/..' . '/orhanerday/open-ai/src/OpenAi.php',
+        'Orhanerday\\OpenAi\\Url' => __DIR__ . '/..' . '/orhanerday/open-ai/src/Url.php',
         'Override' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/Override.php',
         'PHPStan\\PhpDocParser\\Ast\\AbstractNodeVisitor' => __DIR__ . '/..' . '/phpstan/phpdoc-parser/src/Ast/AbstractNodeVisitor.php',
         'PHPStan\\PhpDocParser\\Ast\\Attribute' => __DIR__ . '/..' . '/phpstan/phpdoc-parser/src/Ast/Attribute.php',

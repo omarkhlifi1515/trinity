@@ -399,7 +399,7 @@ fun HRProfileScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = user?.companyCode ?: "Not available",
+                                    text = user?.companyCode ?: "Not available", // Department name
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface

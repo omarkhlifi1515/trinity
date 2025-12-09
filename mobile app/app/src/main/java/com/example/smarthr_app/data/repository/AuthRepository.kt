@@ -12,42 +12,117 @@ import com.example.smarthr_app.data.model.UserRegisterRequest
 import com.example.smarthr_app.data.remote.RetrofitInstance
 import com.example.smarthr_app.utils.Resource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import okhttp3.MultipartBody
 
 class AuthRepository(private val dataStoreManager: DataStoreManager) {
 
+    private val supabaseAuthRepository = SupabaseAuthRepository(dataStoreManager)
+
     val isLoggedIn: Flow<Boolean> = dataStoreManager.authToken.map { it != null }
     val user: Flow<UserDto?> = dataStoreManager.user
 
+    private suspend fun isOfflineMode(): Boolean {
+        return dataStoreManager.getConnectionMode() == "offline"
+    }
+
     suspend fun login(loginRequest: LoginRequest): Resource<AuthResponse> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.login(loginRequest.email, loginRequest.password)
+        }
+        
+        // Online mode - use Laravel API
         return try {
             val response = RetrofitInstance.api.login(loginRequest)
             if (response.isSuccessful && response.body() != null) {
                 val authResponse = response.body()!!
                 // Save token and user to DataStore
-                dataStoreManager.saveToken(authResponse.token) // Token in response likely doesn't have "Bearer " prefix yet, or if it does, check API. Usually raw token.
-                // Assuming raw token. The Interceptor might add "Bearer ".
+                dataStoreManager.saveToken(authResponse.token)
                 dataStoreManager.saveUser(authResponse.user)
                 Resource.Success(authResponse)
             } else {
-                Resource.Error(response.errorBody()?.string() ?: "Login failed")
+                // Parse error body - handle both JSON and HTML responses
+                val errorBody = response.errorBody()?.string() ?: "Login failed"
+                val errorMessage = try {
+                    // Try to parse as JSON
+                    val json = com.google.gson.JsonParser.parseString(errorBody)
+                    if (json.isJsonObject) {
+                        val obj = json.asJsonObject
+                        obj.get("message")?.asString ?: obj.get("error")?.asString ?: errorBody
+                    } else {
+                        errorBody
+                    }
+                } catch (e: Exception) {
+                    // If it's HTML (doctype error), return a clean message
+                    if (errorBody.contains("<!DOCTYPE") || errorBody.contains("<html")) {
+                        when (response.code()) {
+                            401 -> "Invalid email or password"
+                            422 -> "Validation failed. Please check your input."
+                            500 -> "Server error. Please try again later."
+                            else -> "Login failed. Please check your credentials."
+                        }
+                    } else {
+                        errorBody
+                    }
+                }
+                Resource.Error(errorMessage)
             }
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "An error occurred")
+            val errorMessage = when {
+                e.message?.contains("Unable to resolve host", ignoreCase = true) == true -> 
+                    "Network error. Please check your internet connection."
+                e.message?.contains("timeout", ignoreCase = true) == true -> 
+                    "Connection timeout. Please try again."
+                else -> e.message ?: "An error occurred during login"
+            }
+            Resource.Error(errorMessage)
         }
     }
 
     suspend fun register(request: UserRegisterRequest): Resource<UserDto> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.register(request)
+        }
+        
+        // Online mode - use Laravel API
         return try {
             val response = RetrofitInstance.api.registerUser(request)
             if (response.isSuccessful && response.body() != null) {
-                Resource.Success(response.body()!!)
+                val userDto = response.body()!!
+                
+                // After registration, auto-login to get token
+                // This ensures user is authenticated immediately after registration
+                try {
+                    val loginResponse = RetrofitInstance.api.login(
+                        LoginRequest(
+                            email = request.email,
+                            password = request.password
+                        )
+                    )
+                    if (loginResponse.isSuccessful && loginResponse.body() != null) {
+                        val authResponse = loginResponse.body()!!
+                        // Save token and updated user data (may have company if HR)
+                        dataStoreManager.saveToken(authResponse.token)
+                        dataStoreManager.saveUser(authResponse.user)
+                        return Resource.Success(authResponse.user)
+                    }
+                } catch (e: Exception) {
+                    // Auto-login failed, but user is registered
+                    // Return registered user without token - user will need to login manually
+                }
+                
+                // If auto-login fails, save user data without token
+                dataStoreManager.saveUser(userDto)
+                Resource.Success(userDto)
             } else {
-                Resource.Error(response.errorBody()?.string() ?: "Registration failed")
+                val errorBody = response.errorBody()?.string() ?: "Registration failed"
+                Resource.Error(errorBody)
             }
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "An error occurred")
+            Resource.Error(e.message ?: "An error occurred during registration")
         }
     }
 
@@ -84,12 +159,23 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
     }
 
     suspend fun logout() {
-        dataStoreManager.clearData()
+        // If offline mode, logout from Supabase first
+        if (isOfflineMode()) {
+            supabaseAuthRepository.logout()
+        } else {
+            dataStoreManager.clearData()
+        }
     }
 
     suspend fun updateCompanyCode(companyCode: String): Resource<UserDto> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.updateCompanyCode(companyCode)
+        }
+        
+        // Online mode - use Laravel API
         return try {
-            val token = dataStoreManager.getToken()
+            val token = dataStoreManager.authToken.first()
             if (token == null) {
                 return Resource.Error("Not authenticated")
             }
@@ -108,8 +194,14 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
     }
 
     suspend fun leaveCompany(): Resource<UserDto> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.leaveCompany()
+        }
+        
+        // Online mode - use Laravel API
         return try {
-            val token = dataStoreManager.getToken()
+            val token = dataStoreManager.authToken.first()
             if (token == null) {
                 return Resource.Error("Not authenticated")
             }
@@ -128,8 +220,14 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
     }
 
     suspend fun removeFromWaitlist(): Resource<UserDto> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.removeFromWaitlist()
+        }
+        
+        // Online mode - use Laravel API
         return try {
-            val token = dataStoreManager.getToken()
+            val token = dataStoreManager.authToken.first()
             if (token == null) {
                 return Resource.Error("Not authenticated")
             }
@@ -148,12 +246,18 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
     }
 
     suspend fun refreshProfile(): Resource<UserDto> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.refreshProfile()
+        }
+        
+        // Online mode - use Laravel API
         return try {
-            val token = dataStoreManager.getToken()
+            val token = dataStoreManager.authToken.first()
             if (token == null) {
                 return Resource.Error("Not authenticated")
             }
-            val currentUser = dataStoreManager.getUser()
+            val currentUser = dataStoreManager.user.first()
             if (currentUser == null) {
                 return Resource.Error("User not found")
             }
@@ -169,7 +273,7 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
             }
         } catch (e: Exception) {
             // If refresh fails, return current user data
-            val currentUser = dataStoreManager.getUser()
+            val currentUser = dataStoreManager.user.first()
             if (currentUser != null) {
                 Resource.Success(currentUser)
             } else {
@@ -179,8 +283,18 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
     }
 
     suspend fun updateProfile(request: UpdateProfileRequest): Resource<UserDto> {
+        // Check if offline mode is enabled
+        if (isOfflineMode()) {
+            return supabaseAuthRepository.updateProfile(
+                name = request.name,
+                phone = request.phone,
+                gender = request.gender
+            )
+        }
+        
+        // Online mode - use Laravel API
         return try {
-            val token = dataStoreManager.getToken()
+            val token = dataStoreManager.authToken.first()
             if (token == null) {
                 return Resource.Error("Not authenticated")
             }
@@ -200,7 +314,7 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
 
     suspend fun uploadProfileImage(imagePart: MultipartBody.Part): Resource<UploadImageResponse> {
         return try {
-            val token = dataStoreManager.getToken()
+            val token = dataStoreManager.authToken.first()
             if (token == null) {
                 return Resource.Error("Not authenticated")
             }
@@ -214,5 +328,9 @@ class AuthRepository(private val dataStoreManager: DataStoreManager) {
         } catch (e: Exception) {
             Resource.Error(e.message ?: "An error occurred")
         }
+    }
+    
+    suspend fun setConnectionMode(mode: String) {
+        dataStoreManager.setConnectionMode(mode)
     }
 }

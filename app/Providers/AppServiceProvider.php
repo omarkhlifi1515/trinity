@@ -33,14 +33,6 @@ class AppServiceProvider extends ServiceProvider
         $this->configureUrl();
         Task::observe(TaskObserver::class);
         Message::observe(MessageObserver::class);
-
-        // Register global Filament widgets (floating chat)
-        if (class_exists(Filament::class)) {
-            Filament::registerWidgets([
-                \App\Filament\Widgets\ChatBotWidget::class,
-            ]);
-        }
-
     }
     private function configureCommands(): void
     {

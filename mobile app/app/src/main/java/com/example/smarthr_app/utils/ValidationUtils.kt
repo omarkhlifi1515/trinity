@@ -36,14 +36,11 @@ object ValidationUtils {
         }
     }
 
-    // FIXED: Simplified to match Laravel's standard validation
+    // No password format rules - any non-empty password is accepted
     fun validatePassword(password: String): ValidationResult {
         return when {
             password.isBlank() -> ValidationResult(false, "Password is required")
-            // Changed from strict Regex to simple length check
-            // Laravel default is often 8, but we'll keep 6 to be safe
-            password.length < 6 -> ValidationResult(false, "Password must be at least 6 characters")
-            else -> ValidationResult(true, "")
+            else -> ValidationResult(true, "") // Accept any password, no format rules
         }
     }
 

@@ -66,6 +66,8 @@ import com.example.smarthr_app.presentation.viewmodel.AuthViewModel
 import com.example.smarthr_app.presentation.viewmodel.ChatViewModel
 import com.example.smarthr_app.presentation.viewmodel.LeaveViewModel
 import com.example.smarthr_app.presentation.viewmodel.TaskViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,6 +86,33 @@ fun EmployeeDashboardScreen(
 ) {
     val user by authViewModel.user.collectAsState(initial = null)
     var selectedTabIndex by remember { mutableStateOf(0) }
+    
+    // Auto-refresh user profile to detect company acceptance
+    // Refresh every 30 seconds when user is on waitlist
+    LaunchedEffect(user?.waitingCompanyCode) {
+        if (!user?.waitingCompanyCode.isNullOrBlank() && user?.companyCode.isNullOrBlank()) {
+            // User is waiting for approval - auto-refresh every 30 seconds
+            while (true) {
+                delay(30000) // 30 seconds
+                // Get current user using flow.first() instead of collectAsState
+                val currentUser = authViewModel.user.first()
+                // Stop auto-refresh if user is accepted or waitlist is cleared
+                if (currentUser?.waitingCompanyCode.isNullOrBlank() || !currentUser?.companyCode.isNullOrBlank()) {
+                    break
+                }
+                authViewModel.refreshProfile()
+            }
+        }
+    }
+    
+    // Also refresh when user changes to detect company acceptance
+    LaunchedEffect(user?.companyCode) {
+        // When companyCode changes from null/empty to a value, user was accepted
+        if (!user?.companyCode.isNullOrBlank()) {
+            // User was just accepted - refresh profile to ensure we have latest data
+            authViewModel.refreshProfile()
+        }
+    }
 
     LaunchedEffect(Unit) {
         authViewModel.user.collect { currentUser ->
@@ -91,6 +120,8 @@ fun EmployeeDashboardScreen(
                 onLogout()
             }
         }
+        // Initial profile refresh when screen loads
+        authViewModel.refreshProfile()
     }
 
     LaunchedEffect(user) {
@@ -366,7 +397,7 @@ fun HomeTab(
                             )
                             Text(
                                 text = if (!user?.companyCode.isNullOrBlank())
-                                    "Employee - ${user?.companyCode}"
+                                    "Employee - ${user?.companyCode}" // Department name
                                 else if (!user?.waitingCompanyCode.isNullOrBlank())
                                     "Waiting for approval"
                                 else

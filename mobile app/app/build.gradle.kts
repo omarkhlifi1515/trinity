@@ -5,6 +5,7 @@ plugins {
     id("kotlin-kapt")
     id("kotlin-parcelize")
     alias(libs.plugins.kotlin.ksp)
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 
@@ -108,5 +109,12 @@ dependencies {
     //websocket
     implementation("com.squareup.okhttp3:okhttp:5.1.0")
 
+    // Supabase for offline mode
+    implementation(platform("io.github.jan-tennert.supabase:bom:2.5.0"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:gotrue-kt")
+    implementation("io.github.jan-tennert.supabase:storage-kt")
+    implementation("io.ktor:ktor-client-android:2.3.5")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
 }

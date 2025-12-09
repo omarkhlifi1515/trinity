@@ -425,7 +425,7 @@ fun EmployeeProfileScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Approved - ${user?.companyCode}",
+                                            text = "Approved - Department: ${user?.companyCode}",
                                             style = MaterialTheme.typography.bodyLarge,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF4CAF50)
@@ -445,7 +445,7 @@ fun EmployeeProfileScreen(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Waiting - ${user?.waitingCompanyCode}",
+                                            text = "Waiting - Department: ${user?.waitingCompanyCode}",
                                             style = MaterialTheme.typography.bodyLarge,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFFFF9800)

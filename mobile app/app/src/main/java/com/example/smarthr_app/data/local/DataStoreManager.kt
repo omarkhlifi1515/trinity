@@ -26,6 +26,7 @@ class DataStoreManager(private val context: Context) {
         val KEY_USER_GENDER = stringPreferencesKey("user_gender")
         val KEY_COMPANY_CODE = stringPreferencesKey("company_code")
         val KEY_USER_IMAGE = stringPreferencesKey("user_image")
+        val KEY_CONNECTION_MODE = stringPreferencesKey("connection_mode") // "online" or "offline"
     }
 
     suspend fun saveToken(token: String) {
@@ -91,5 +92,20 @@ class DataStoreManager(private val context: Context) {
 
     suspend fun getUser(): UserDto? {
         return user.first()
+    }
+    
+    suspend fun setConnectionMode(mode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CONNECTION_MODE] = mode // "online" or "offline"
+        }
+    }
+    
+    val connectionMode: Flow<String> = context.dataStore.data
+        .map { preferences -> 
+            preferences[KEY_CONNECTION_MODE] ?: "online" // Default to online mode
+        }
+    
+    suspend fun getConnectionMode(): String {
+        return connectionMode.first()
     }
 }

@@ -34,7 +34,8 @@ class CompanyResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            CompanyResource\RelationManagers\WaitlistUsersRelationManager::class,
+            CompanyResource\RelationManagers\MembersRelationManager::class,
         ];
     }
 
