@@ -1,16 +1,37 @@
-/.venv
-__pycache__/
-*.pyc
+/node_modules
+/public/hot
+/public/storage
+/public/build
+/storage/*.key
+/vendor
 .env
-.env.*
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
 /.idea
-.vscode
-node_modules/
-/web/.next
-/web/.vercel
-/mobile/.gradle
-/mobile/.idea
-dist/
-*.log
-*.db
-/.DS_Store
+/.vscode
+
+# Mobile App
+mobile app/.gradle
+mobile app/build
+mobile app/app/build
+mobile app/.idea
+mobile app/local.properties
+mobile app/*.iml
+mobile app/app/*.iml
+mobile app/.DS_Store
+mobile app/captures/
+mobile app/externalNativeBuild/
+mobile app/app/release/
+mobile app/keystore.properties
+mobile app/*.keystore
+
+# OS
+.DS_Store
+Thumbs.db

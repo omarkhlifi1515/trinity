@@ -1,5 +1,6 @@
 package com.example.smarthr_app.data.remote
 
+import com.example.smarthr_app.BuildConfig
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -18,8 +19,8 @@ interface N8nApi {
 
 // 3. Separate Retrofit Instance for n8n
 object N8nApiClient {
-    // Replace with your actual n8n Cloud or Self-hosted URL
-    private const val BASE_URL = "https://lasmih.app.n8n.cloud/"
+    // Using BuildConfig for configurable n8n URL
+    private const val BASE_URL = BuildConfig.N8N_BASE_URL
 
     val api: N8nApi by lazy {
         Retrofit.Builder()

@@ -14,7 +14,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.smarthr_app"
+        applicationId = "com.trinity.smarthr"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -24,6 +24,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        // BuildConfig fields for API configuration
+        buildConfigField("String", "BASE_URL", "\"https://your-render-app.onrender.com/api/\"")
+        buildConfigField("String", "SUPABASE_URL", "\"https://nghwpwajcoofbgvsevgf.supabase.co\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"sb_publishable_hahT_e8_6T-6qXE4boTyYQ_Q-w5rFzx\"")
+        buildConfigField("String", "N8N_BASE_URL", "\"https://lasmih.app.n8n.cloud/\"")
     }
 
     buildTypes {
@@ -44,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"

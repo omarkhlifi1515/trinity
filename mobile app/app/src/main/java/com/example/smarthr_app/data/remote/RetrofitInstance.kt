@@ -1,6 +1,7 @@
 package com.example.smarthr_app.data.remote
 
 import android.content.Context
+import com.example.smarthr_app.BuildConfig
 import com.example.smarthr_app.data.local.DataStoreManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -13,8 +14,9 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitInstance {
 
-    // ✅ UPDATED: Point to ngrok tunnel for Laravel backend
-    const val BASE_URL = "https://luigi-anthropocentric-uncheerily.ngrok-free.dev/api/"
+    // ✅ UPDATED: Use BuildConfig for configurable API URL
+    // Set this in build.gradle.kts or use environment-specific build variants
+    const val BASE_URL = BuildConfig.BASE_URL
 
     private var dataStoreManager: DataStoreManager? = null
 

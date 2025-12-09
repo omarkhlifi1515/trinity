@@ -1,6 +1,7 @@
 package com.example.smarthr_app.data.remote
 
 import android.content.Context
+import com.example.smarthr_app.BuildConfig
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
@@ -10,9 +11,9 @@ import io.ktor.client.engine.android.Android
 
 object SupabaseInstance {
     
-    // Supabase project configuration
-    private const val SUPABASE_URL = "https://nghwpwajcoofbgvsevgf.supabase.co"
-    private const val SUPABASE_ANON_KEY = "sb_publishable_hahT_e8_6T-6qXE4boTyYQ_Q-w5rFzx"
+    // Supabase project configuration - using BuildConfig for flexibility
+    private const val SUPABASE_URL = BuildConfig.SUPABASE_URL
+    private const val SUPABASE_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
     
     private var supabaseClient: SupabaseClient? = null
     
