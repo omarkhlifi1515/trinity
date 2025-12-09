@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude Supabase auth tokens -->
+    <exclude domain="sharedpref" path="io.github.jan.supabase.gotrue"/>
+</full-backup-content>
+

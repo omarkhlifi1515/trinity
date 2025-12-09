@@ -1,17 +1,18 @@
 services:
   - type: web
-    name: trinity-hrm
-    runtime: docker
+    name: trinity-get-2-web
+    env: node
     plan: free
+    buildCommand: cd web && npm install && npm run build
+    startCommand: cd web && npm start
     envVars:
-      - key: APP_ENV
+      - key: NODE_ENV
         value: production
-      - key: APP_DEBUG
-        value: false
-      - key: LOG_LEVEL
-        value: error
-      - key: PHP_VERSION
-        value: 8.4
-    healthCheckPath: /
-    autoDeploy: true
+      - key: AUTH_SECRET
+        generateValue: true
+      # JSONBin.io Configuration - REQUIRED for data persistence
+      - key: JSONBIN_API_KEY
+        sync: false  # Set this in Render dashboard after deployment
+      - key: JSONBIN_BIN_ID
+        sync: false  # Auto-created on first use if not set
 

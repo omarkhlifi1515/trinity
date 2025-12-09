@@ -1,63 +1,117 @@
-# 🇰🇪 Kenyan HRM System (Open Source)
+# 🚀 Trinity Get 2 - Unified HRM Platform
 
-A modern, Laravel + FilamentPHP-based **Human Resource Management System** tailored for Kenyan businesses. This solution simplifies employee management, payroll (PAYE, NHIF, NSSF), attendance, and more — all in compliance with Kenyan labor laws.
+A modern Human Resource Management System with **web**, **React Native mobile**, and **Kotlin Android mobile** applications sharing the same Supabase database.
 
-<img src="img.png" alt="Open source HRM" style="max-width: 100%; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);" >
+## 📱 Applications
 
----
+### 1. Web App (Next.js)
+- Modern Next.js 14+ application
+- Tailwind CSS styling
+- Responsive design
+- Location: `web/`
 
-## 🔧 Tech Stack
+### 2. React Native Mobile App
+- Cross-platform mobile app
+- Expo framework
+- Material Design UI
+- Location: `mobile/`
 
--   **Laravel 12+**
--   **FilamentPHP 3.x** (admin panel)
--   **MySQL/MariaDB** (database)
--   **PHP 8.2+**
--   **Tailwind CSS** (via Filament)
--   **Alpine.js** (via Filament)
+### 3. Kotlin Android Mobile App
+- Native Android application
+- Jetpack Compose UI
+- Material Design 3
+- Location: `mobile-kotlin/`
 
----
+## 🎨 Shared Features
 
-## 🚀 Features
+All three applications share:
+- ✅ **Same Supabase Database** - Unified data across all platforms
+- ✅ **Same Authentication** - Sign in once, access everywhere
+- ✅ **Same Design Theme** - Consistent UI/UX
+- ✅ **Real-time Sync** - Changes reflect instantly across platforms
+- ✅ **Direct Database Access** - Mobile apps connect directly (no API server needed)
 
-### ✅ Core Modules
+## 🛠 Tech Stack
 
--   **Employee Records** (with KRA PIN, NSSF, NHIF, etc.)
--   **Departments**
--   **Attendance**
--   **Leave**
--   **Payroll**
--   **Tasks board**
--   **Employee portal** (/portal)
--   **Calendar**
--   **Kanban page**
--   **Internal messaging**
--   _More modules coming soon_  
-     ( Recruitment, Training, etc.)
+### Web
+- Next.js 14+ (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase JS Client
 
-## ⚙️ Installation
+### React Native Mobile
+- React Native
+- Expo
+- TypeScript
+- React Native Paper
+- Supabase JS Client
 
+### Kotlin Android Mobile
+- Kotlin
+- Jetpack Compose
+- Material Design 3
+- Supabase Kotlin Client
+- MVVM Architecture
+
+## 📋 Supabase Configuration
+
+All apps use the same Supabase project:
+- **URL**: `https://nghwpwajcoofbgvsevgf.supabase.co`
+- **Anon Key**: `sb_publishable_hahT_e8_6T-6qXE4boTyYQ_Q-w5rFzx`
+
+## 🎨 Design System
+
+Unified theme across all platforms:
+- **Primary**: Blue (#3b82f6)
+- **Secondary**: Purple (#8b5cf6)
+- **Success**: Green (#10b981)
+- **Error**: Red (#ef4444)
+- **Background**: Light Gray (#f9fafb)
+
+## 🚀 Quick Start
+
+### Web App
 ```bash
-git clone https://github.com/michaelnjuguna/open-source-hrm.git
-cd open-source-hrm
-
-composer install
-cp .env.example .env
-php artisan key:generate
-
-# Setup DB credentials in .env
-php artisan migrate --seed
-
-composer run dev
+cd web
+npm install
+npm run dev
 ```
 
-## 🤝 Contributing
+### React Native Mobile
+```bash
+cd mobile
+npm install
+npm start
+```
 
-All contributions are welcome. Please fork the repo, create a feature branch and submit a pull request.
+### Kotlin Android Mobile
+1. Open `mobile-kotlin` in Android Studio
+2. Sync Gradle files
+3. Run on device/emulator
 
-This project is actively maintained. All changes and new features are merged into the `main` branch every Friday. Contributors are encouraged to submit pull requests for review before this weekly merge.
+## 📚 Documentation
 
-## 📜 License
+- [Web App README](./web/README.md)
+- [React Native Mobile README](./mobile/README.md)
+- [Kotlin Android Mobile README](./mobile-kotlin/README.md)
+- [Setup Guide](./docs/SETUP.md)
 
-[MIT license](LICENSE)
+## 🔐 Authentication Flow
 
-Made with ❤️
+1. User signs up/signs in via any app
+2. Session stored in Supabase Auth
+3. All apps share the same authentication state
+4. Real-time sync across all platforms
+
+## 📱 Key Features
+
+- Employee Management
+- Task Management
+- Attendance Tracking
+- Leave Management
+- Real-time Updates
+- Offline Support (mobile apps)
+
+---
+
+Made with ❤️ using modern technologies
