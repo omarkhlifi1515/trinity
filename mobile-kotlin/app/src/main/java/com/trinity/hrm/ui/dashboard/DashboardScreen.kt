@@ -58,13 +58,7 @@ fun DashboardScreen(navController: NavController) {
                 NavigationBarItem(
                     selected = false,
                     onClick = { navController.navigate(Screen.Employees.route) },
-                    icon = { Icon(Icons.Default.People, contentDescription = "Employees") },
-                    label = { Text("Employees") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate(Screen.Employees.route) },
-                    icon = { Icon(Icons.Default.People, contentDescription = "Employees") },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Employees") },
                     label = { Text("Employees") }
                 )
                 NavigationBarItem(
@@ -76,13 +70,13 @@ fun DashboardScreen(navController: NavController) {
                 NavigationBarItem(
                     selected = false,
                     onClick = { navController.navigate(Screen.Tasks.route) },
-                    icon = { Icon(Icons.Default.Work, contentDescription = "Tasks") },
+                    icon = { Icon(Icons.Default.List, contentDescription = "Tasks") },
                     label = { Text("Tasks") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = { navController.navigate(Screen.Attendance.route) },
-                    icon = { Icon(Icons.Default.CalendarToday, contentDescription = "Attendance") },
+                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Attendance") },
                     label = { Text("Attendance") }
                 )
                 NavigationBarItem(
@@ -94,7 +88,7 @@ fun DashboardScreen(navController: NavController) {
                 NavigationBarItem(
                     selected = false,
                     onClick = { navController.navigate(Screen.Messages.route) },
-                    icon = { Icon(Icons.Default.Message, contentDescription = "Messages") },
+                    icon = { Icon(Icons.Default.Email, contentDescription = "Messages") },
                     label = { Text("Messages") }
                 )
             }

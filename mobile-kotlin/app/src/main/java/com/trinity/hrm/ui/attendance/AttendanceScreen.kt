@@ -28,7 +28,7 @@ fun AttendanceScreen() {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Icon(
-                    Icons.Default.CalendarToday,
+                    Icons.Default.CalendarMonth,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

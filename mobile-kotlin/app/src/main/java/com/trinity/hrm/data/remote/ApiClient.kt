@@ -1,6 +1,7 @@
 package com.trinity.hrm.data.remote
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
@@ -79,12 +80,12 @@ object ApiClient {
         }
         
         if (response.status.isSuccess()) {
-            val authResponse: AuthResponseWithToken = response.body()
+            val authResponse: AuthResponseWithToken = response.body<AuthResponseWithToken>()
             // Store token for future requests
             authResponse.token?.let { storedToken = it }
             return AuthResponse(authResponse.user)
         } else {
-            val error: ErrorResponse = response.body()
+            val error: ErrorResponse = response.body<ErrorResponse>()
             throw Exception(error.error)
         }
     }
@@ -96,12 +97,12 @@ object ApiClient {
         }
         
         if (response.status.isSuccess()) {
-            val authResponse: AuthResponseWithToken = response.body()
+            val authResponse: AuthResponseWithToken = response.body<AuthResponseWithToken>()
             // Store token for future requests
             authResponse.token?.let { storedToken = it }
             return AuthResponse(authResponse.user)
         } else {
-            val error: ErrorResponse = response.body()
+            val error: ErrorResponse = response.body<ErrorResponse>()
             throw Exception(error.error)
         }
     }
@@ -123,7 +124,7 @@ object ApiClient {
                 }
             }
             if (response.status.isSuccess()) {
-                val meResponse: MeResponse = response.body()
+                val meResponse: MeResponse = response.body<MeResponse>()
                 meResponse.user
             } else {
                 null

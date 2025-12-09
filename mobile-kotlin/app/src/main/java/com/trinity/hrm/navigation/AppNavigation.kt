@@ -12,6 +12,9 @@ import com.trinity.hrm.ui.dashboard.DashboardScreen
 import com.trinity.hrm.ui.employees.EmployeesScreen
 import com.trinity.hrm.ui.tasks.TasksScreen
 import com.trinity.hrm.ui.attendance.AttendanceScreen
+import com.trinity.hrm.ui.departments.DepartmentsScreen
+import com.trinity.hrm.ui.leaves.LeavesScreen
+import com.trinity.hrm.ui.messages.MessagesScreen
 import com.trinity.hrm.viewmodel.AuthViewModel
 
 sealed class Screen(val route: String) {
