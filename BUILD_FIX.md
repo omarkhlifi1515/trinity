@@ -3,16 +3,16 @@
 ## Issues Found
 
 1. **Missing `intl` extension** - Required by Filament
-2. **PHP version mismatch** - Dependencies require PHP 8.3+ but Dockerfile was using 8.2
+2. **PHP version mismatch** - Dependencies require PHP 8.4+ but Dockerfile was using 8.3
 
 ## Fixes Applied
 
 ✅ Updated Dockerfile to:
-- Use PHP 8.3 instead of 8.2
+- Use PHP 8.4 instead of 8.3 (required by Symfony 8.0 packages)
 - Install `libicu-dev` (required for intl extension)
 - Install `intl` PHP extension
 
-✅ Updated render.yaml to reflect PHP 8.3
+✅ Updated render.yaml to reflect PHP 8.4
 
 ## What Changed
 
