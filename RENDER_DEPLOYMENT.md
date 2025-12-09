@@ -33,6 +33,9 @@ This guide will help you deploy your Trinity HRM application to Render.
 2. Click "New +" → "Blueprint"
 3. Connect your GitHub repository
 4. Render will automatically detect `render.yaml` and create the service
+5. The service will use Docker (as specified in render.yaml)
+
+**Note**: Render doesn't natively support PHP runtime, so we use Docker. The Dockerfile is already configured in your project.
 
 ### Option B: Manual Setup
 
@@ -41,15 +44,8 @@ This guide will help you deploy your Trinity HRM application to Render.
 3. Connect your GitHub repository
 4. Configure the service:
    - **Name**: `trinity-hrm`
-   - **Environment**: `PHP`
-   - **Build Command**: 
-     ```bash
-     composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan filament:assets && npm ci && npm run build
-     ```
-   - **Start Command**: 
-     ```bash
-     php artisan serve --host=0.0.0.0 --port=$PORT
-     ```
+   - **Environment**: `Docker`
+   - **Dockerfile Path**: `Dockerfile` (should auto-detect)
    - **Plan**: Choose based on your needs (Free tier available)
 
 ## Step 4: Configure Environment Variables
@@ -142,6 +138,8 @@ For file storage, you have two options:
 - Check build logs in Render dashboard
 - Ensure all dependencies are in `composer.json` and `package.json`
 - Verify PHP version compatibility (8.2+)
+- Check Dockerfile is present and correctly configured
+- Ensure Docker build completes successfully
 
 ### Database Connection Issues
 - Verify database credentials in environment variables
