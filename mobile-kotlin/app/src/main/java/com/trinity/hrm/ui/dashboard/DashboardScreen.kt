@@ -9,9 +9,12 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.trinity.hrm.data.remote.ApiClient
+import com.trinity.hrm.data.remote.LocalAuth
+import com.trinity.hrm.data.remote.RoleHelper
 import com.trinity.hrm.navigation.Screen
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -20,14 +23,31 @@ import androidx.compose.runtime.rememberCoroutineScope
 @Composable
 fun DashboardScreen(navController: NavController) {
     val userEmail = remember { mutableStateOf("") }
+    val userRole = remember { mutableStateOf("Employee") }
+    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
     val coroutineScope = rememberCoroutineScope()
-
+    val context = LocalContext.current
+    
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             val user = ApiClient.getCurrentUser()
             userEmail.value = user?.email ?: ""
+            
+            // Get full user object for role checking
+            val localAuth = LocalAuth(context)
+            currentUser.value = localAuth.getCurrentUser()
+            
+            // Set role display
+            userRole.value = when {
+                RoleHelper.isAdmin(currentUser.value) -> "Admin"
+                RoleHelper.isDepartmentHead(currentUser.value) -> "Department Head"
+                else -> "Employee"
+            }
         }
     }
+    
+    val canAddEmployees = RoleHelper.canAddEmployees(currentUser.value)
+    val canAddTasks = RoleHelper.canAddTasks(currentUser.value)
 
     Scaffold(
         topBar = {
@@ -55,18 +75,20 @@ fun DashboardScreen(navController: NavController) {
                     icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard") },
                     label = { Text("Dashboard") }
                 )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate(Screen.Employees.route) },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Employees") },
-                    label = { Text("Employees") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate(Screen.Departments.route) },
-                    icon = { Icon(Icons.Default.Business, contentDescription = "Departments") },
-                    label = { Text("Depts") }
-                )
+                if (canAddEmployees) {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = { navController.navigate(Screen.Employees.route) },
+                        icon = { Icon(Icons.Default.Person, contentDescription = "Employees") },
+                        label = { Text("Employees") }
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = { navController.navigate(Screen.Departments.route) },
+                        icon = { Icon(Icons.Default.Business, contentDescription = "Departments") },
+                        label = { Text("Depts") }
+                    )
+                }
                 NavigationBarItem(
                     selected = false,
                     onClick = { navController.navigate(Screen.Tasks.route) },
@@ -130,7 +152,7 @@ fun DashboardScreen(navController: NavController) {
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "Employee",
+                            text = userRole.value,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -138,27 +160,71 @@ fun DashboardScreen(navController: NavController) {
                 }
             }
 
-            // Stats Grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(title = "Employees", value = "0", modifier = Modifier.weight(1f), onClick = { navController.navigate(Screen.Employees.route) })
-                StatCard(title = "Departments", value = "0", modifier = Modifier.weight(1f), onClick = { navController.navigate(Screen.Departments.route) })
+            // Stats Grid with improved design
+            if (canAddEmployees) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(
+                        title = "Employees",
+                        value = "0",
+                        icon = Icons.Default.Person,
+                        color = androidx.compose.ui.graphics.Color(0xFF3B82F6),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Screen.Employees.route) }
+                    )
+                    StatCard(
+                        title = "Departments",
+                        value = "0",
+                        icon = Icons.Default.Business,
+                        color = androidx.compose.ui.graphics.Color(0xFF8B5CF6),
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(Screen.Departments.route) }
+                    )
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatCard(title = "Tasks", value = "0", modifier = Modifier.weight(1f), onClick = { navController.navigate(Screen.Tasks.route) })
-                StatCard(title = "Attendance", value = "0", modifier = Modifier.weight(1f), onClick = { navController.navigate(Screen.Attendance.route) })
+                StatCard(
+                    title = "Tasks",
+                    value = "0",
+                    icon = Icons.Default.List,
+                    color = androidx.compose.ui.graphics.Color(0xFF10B981),
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate(Screen.Tasks.route) }
+                )
+                StatCard(
+                    title = "Attendance",
+                    value = "0",
+                    icon = Icons.Default.CalendarMonth,
+                    color = androidx.compose.ui.graphics.Color(0xFFF59E0B),
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate(Screen.Attendance.route) }
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatCard(title = "Leaves", value = "0", modifier = Modifier.weight(1f), onClick = { navController.navigate(Screen.Leaves.route) })
-                StatCard(title = "Messages", value = "0", modifier = Modifier.weight(1f), onClick = { navController.navigate(Screen.Messages.route) })
+                StatCard(
+                    title = "Leaves",
+                    value = "0",
+                    icon = Icons.Default.Event,
+                    color = androidx.compose.ui.graphics.Color(0xFFEC4899),
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate(Screen.Leaves.route) }
+                )
+                StatCard(
+                    title = "Messages",
+                    value = "0",
+                    icon = Icons.Default.Email,
+                    color = androidx.compose.ui.graphics.Color(0xFF6366F1),
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate(Screen.Messages.route) }
+                )
             }
 
             // Welcome Card
@@ -186,25 +252,58 @@ fun DashboardScreen(navController: NavController) {
 }
 
 @Composable
-fun StatCard(title: String, value: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun StatCard(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
     Card(
-        modifier = modifier.then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = modifier
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+            .height(120.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+            }
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = color.copy(alpha = 0.1f)
+            ) {
+                Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        tint = color,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     }
 }

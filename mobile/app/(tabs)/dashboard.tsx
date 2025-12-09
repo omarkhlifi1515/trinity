@@ -3,10 +3,14 @@ import { Text, Card, Avatar } from 'react-native-paper'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '@/store/authStore'
 import { Users, Briefcase, Calendar, CalendarDays, Building2, MessageSquare } from 'lucide-react-native'
+import { getUserRole, isAdmin, isDepartmentHead } from '@/lib/roles'
 
 export default function DashboardScreen() {
   const router = useRouter()
   const { user } = useAuthStore()
+  const role = getUserRole(user)
+  const showEmployees = isAdmin(user)
+  const showDepartments = isAdmin(user)
 
   return (
     <ScrollView style={styles.container}>
@@ -18,15 +22,19 @@ export default function DashboardScreen() {
               {user?.email}
             </Text>
             <Text variant="bodySmall" style={styles.userRole}>
-              Employee
+              {role === 'admin' ? 'Admin' : role === 'department_head' ? 'Department Head' : 'Employee'}
             </Text>
           </View>
         </View>
       </View>
 
       <View style={styles.statsContainer}>
-        <StatCard title="Employees" value="0" icon={Users} color="#3b82f6" onPress={() => router.push('/(tabs)/employees')} />
-        <StatCard title="Departments" value="0" icon={Building2} color="#8b5cf6" onPress={() => router.push('/(tabs)/departments')} />
+        {showEmployees && (
+          <StatCard title="Employees" value="0" icon={Users} color="#3b82f6" onPress={() => router.push('/(tabs)/employees')} />
+        )}
+        {showDepartments && (
+          <StatCard title="Departments" value="0" icon={Building2} color="#8b5cf6" onPress={() => router.push('/(tabs)/departments')} />
+        )}
         <StatCard title="Tasks" value="0" icon={Briefcase} color="#10b981" onPress={() => router.push('/(tabs)/tasks')} />
         <StatCard title="Attendance" value="0" icon={Calendar} color="#f59e0b" onPress={() => router.push('/(tabs)/attendance')} />
         <StatCard title="Leaves" value="0" icon={CalendarDays} color="#ec4899" onPress={() => router.push('/(tabs)/leaves')} />

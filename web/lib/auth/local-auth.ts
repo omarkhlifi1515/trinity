@@ -8,11 +8,15 @@ const SECRET_KEY = new TextEncoder().encode(
 const COOKIE_NAME = 'auth-token'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
+export type UserRole = 'admin' | 'department_head' | 'employee'
+
 export interface User {
   id: string
   email: string
   password: string // Hashed in production
   createdAt: string
+  role?: UserRole // User role: admin, department_head, or employee
+  department?: string // Department name (for department heads)
 }
 
 // Simple in-memory user store (replace with database in production)
@@ -188,11 +192,22 @@ export async function createUser(email: string, password: string): Promise<User>
     throw new Error('User already exists')
   }
   
+  // Determine role based on email
+  let role: UserRole = 'employee'
+  let department: string | undefined = undefined
+  
+  if (email.toLowerCase() === 'admin@gmail.com') {
+    role = 'admin'
+  }
+  // You can add more logic here to assign department_head role
+  
   const user: User = {
     id: Date.now().toString(),
     email,
     password: hashPassword(password),
     createdAt: new Date().toISOString(),
+    role,
+    department,
   }
   
   users.push(user)

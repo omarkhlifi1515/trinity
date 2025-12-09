@@ -1,8 +1,13 @@
 import { View, StyleSheet, ScrollView } from 'react-native'
 import { Text, Card, FAB } from 'react-native-paper'
 import { Briefcase } from 'lucide-react-native'
+import { useAuthStore } from '@/store/authStore'
+import { canAddTasks } from '@/lib/roles'
 
 export default function TasksScreen() {
+  const { user } = useAuthStore()
+  const canAdd = canAddTasks(user)
+  
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -14,17 +19,19 @@ export default function TasksScreen() {
                 No Tasks Yet
               </Text>
               <Text variant="bodyMedium" style={styles.emptyText}>
-                Create your first task to get started
+                {canAdd ? 'Create your first task to get started' : 'No tasks assigned yet'}
               </Text>
             </View>
           </Card.Content>
         </Card>
       </ScrollView>
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => {}}
-      />
+      {canAdd && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={() => {}}
+        />
+      )}
     </View>
   )
 }

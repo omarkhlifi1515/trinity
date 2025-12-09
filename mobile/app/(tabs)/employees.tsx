@@ -1,8 +1,13 @@
 import { View, StyleSheet, ScrollView } from 'react-native'
 import { Text, Card, FAB } from 'react-native-paper'
 import { Users } from 'lucide-react-native'
+import { useAuthStore } from '@/store/authStore'
+import { canAddEmployees } from '@/lib/roles'
 
 export default function EmployeesScreen() {
+  const { user } = useAuthStore()
+  const canAdd = canAddEmployees(user)
+  
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -14,17 +19,19 @@ export default function EmployeesScreen() {
                 No Employees Yet
               </Text>
               <Text variant="bodyMedium" style={styles.emptyText}>
-                Add your first employee to get started
+                {canAdd ? 'Add your first employee to get started' : 'No employees available'}
               </Text>
             </View>
           </Card.Content>
         </Card>
       </ScrollView>
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => {}}
-      />
+      {canAdd && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          onPress={() => {}}
+        />
+      )}
     </View>
   )
 }
