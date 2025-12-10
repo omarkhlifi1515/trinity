@@ -1,39 +1,49 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MessageSquare, Send, User } from 'lucide-react'
-
-interface Message {
-  id: string
-  sender_name: string
-  sender_email: string
-  recipient_name: string
-  recipient_email: string
-  subject: string
-  content: string
-  created_at: string
-  read: boolean
-}
+import { MessageSquare, Plus, Mail, MailOpen } from 'lucide-react'
+import Link from 'next/link'
+import { getMessages, addMessage, Message, subscribeToMessages, markMessageAsRead } from '@/lib/storage/supabase-storage'
+import { getCurrentUser } from '@/lib/auth/local-auth'
 
 export default function MessagesContent() {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
-  const [newMessage, setNewMessage] = useState({ recipient: '', subject: '', content: '' })
+  const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
+    loadUser()
     loadMessages()
+    
+    // Set up real-time subscription
+    const channel = subscribeToMessages((newMessage) => {
+      // Add new message to the list
+      setMessages(prev => [newMessage, ...prev])
+    })
+
+    // Cleanup subscription on unmount
+    return () => {
+      channel.unsubscribe()
+    }
   }, [])
+
+  const loadUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json()
+      if (data.user) {
+        setCurrentUserId(data.user.id)
+      }
+    } catch (error) {
+      console.error('Error loading user:', error)
+    }
+  }
 
   const loadMessages = async () => {
     try {
       setLoading(true)
-      // Load messages from Supabase
-      // Example: const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false })
-      // setMessages(data || [])
-      
-      // Placeholder data
-      setMessages([])
+      const data = await getMessages(currentUserId)
+      setMessages(data)
     } catch (error) {
       console.error('Error loading messages:', error)
     } finally {
@@ -41,152 +51,93 @@ export default function MessagesContent() {
     }
   }
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      // Send message logic
-      // Example: await supabase.from('messages').insert({ ... })
-      alert('Message sent successfully!')
-      setNewMessage({ recipient: '', subject: '', content: '' })
-      loadMessages()
-    } catch (error) {
-      console.error('Error sending message:', error)
-      alert('Failed to send message')
-    }
+  const handleMarkAsRead = async (messageId: string) => {
+    await markMessageAsRead(messageId)
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, read: true } : msg
+    ))
   }
+
+  const unreadCount = messages.filter(m => !m.read && m.to_user === currentUserId).length
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Messages</h1>
-        <p className="text-gray-600">Internal messaging system</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Messages</h1>
+          <p className="text-gray-600">
+            {unreadCount > 0 ? `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}` : 'All messages read'}
+          </p>
+        </div>
+        <Link
+          href="/dashboard/messages/new"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          New Message
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Messages List */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="font-semibold text-gray-900">Inbox</h2>
-            </div>
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="p-8 text-center">
-                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-600">No messages yet</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {messages.map((message) => (
-                  <button
-                    key={message.id}
-                    onClick={() => setSelectedMessage(message)}
-                    className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                      selectedMessage?.id === message.id ? 'bg-blue-50' : ''
-                    } ${!message.read ? 'bg-blue-50' : ''}`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">{message.sender_name}</span>
-                      </div>
-                      {!message.read && (
-                        <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                      )}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading messages...</p>
+        </div>
+      ) : messages.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-12 text-center">
+          <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Messages Yet</h3>
+          <p className="text-gray-600 mb-6">Send your first message to get started</p>
+          <Link
+            href="/dashboard/messages/new"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            New Message
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {messages.map((message) => {
+            const isUnread = !message.read && message.to_user === currentUserId
+            return (
+              <div
+                key={message.id}
+                className={`bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer ${
+                  isUnread ? 'border-l-4 border-blue-600' : ''
+                }`}
+                onClick={() => isUnread && handleMarkAsRead(message.id)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {isUnread ? (
+                      <Mail className="w-5 h-5 text-blue-600" />
+                    ) : (
+                      <MailOpen className="w-5 h-5 text-gray-400" />
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{message.subject}</h3>
+                      <p className="text-sm text-gray-500">
+                        {message.from_user === currentUserId ? 'To: ' : 'From: '}
+                        {message.to_user || 'All'}
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">{message.subject}</p>
-                    <p className="text-xs text-gray-500 line-clamp-2">{message.content}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {new Date(message.created_at).toLocaleDateString()}
-                    </p>
-                  </button>
-                ))}
+                  </div>
+                  {isUnread && (
+                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                      New
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{message.content}</p>
+                <p className="text-xs text-gray-400">
+                  {new Date(message.created_at).toLocaleString()}
+                </p>
               </div>
-            )}
-          </div>
+            )
+          })}
         </div>
-
-        {/* Message View / Compose */}
-        <div className="lg:col-span-2">
-          {selectedMessage ? (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="mb-6">
-                <button
-                  onClick={() => setSelectedMessage(null)}
-                  className="text-sm text-blue-600 hover:text-blue-700 mb-4"
-                >
-                  ← Back to inbox
-                </button>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">{selectedMessage.subject}</h2>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                  <span>From: {selectedMessage.sender_name}</span>
-                  <span>•</span>
-                  <span>{new Date(selectedMessage.created_at).toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="prose max-w-none">
-                <p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.content}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Compose Message</h2>
-              <form onSubmit={handleSendMessage} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    To
-                  </label>
-                  <input
-                    type="email"
-                    value={newMessage.recipient}
-                    onChange={(e) => setNewMessage({ ...newMessage, recipient: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="recipient@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    value={newMessage.subject}
-                    onChange={(e) => setNewMessage({ ...newMessage, subject: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="Message subject"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    value={newMessage.content}
-                    onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-                    required
-                    rows={8}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="Type your message here..."
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Send className="w-5 h-5" />
-                  Send Message
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
-

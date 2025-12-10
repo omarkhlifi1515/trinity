@@ -13,31 +13,50 @@ import {
   Menu,
   X
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { canAddEmployees, canAddTasks, getUserRole } from '@/lib/auth/roles'
 
 interface User {
   id: string
   email: string
+  role?: 'admin' | 'department_head' | 'employee'
+  department?: string
 }
 
 interface SidebarProps {
   user: User
 }
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Employees', href: '/dashboard/employees', icon: Users },
-  { name: 'Departments', href: '/dashboard/departments', icon: Building2 },
-  { name: 'Tasks', href: '/dashboard/tasks', icon: Briefcase },
-  { name: 'Attendance', href: '/dashboard/attendance', icon: Calendar },
-  { name: 'Leaves', href: '/dashboard/leaves', icon: CalendarDays },
-  { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
+const allNavigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'department_head', 'employee'] },
+  { name: 'Employees', href: '/dashboard/employees', icon: Users, roles: ['admin'] },
+  { name: 'Departments', href: '/dashboard/departments', icon: Building2, roles: ['admin'] },
+  { name: 'Tasks', href: '/dashboard/tasks', icon: Briefcase, roles: ['admin', 'department_head', 'employee'] },
+  { name: 'Attendance', href: '/dashboard/attendance', icon: Calendar, roles: ['admin', 'department_head', 'employee'] },
+  { name: 'Leaves', href: '/dashboard/leaves', icon: CalendarDays, roles: ['admin', 'department_head', 'employee'] },
+  { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare, roles: ['admin', 'department_head', 'employee'] },
 ]
 
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [userRole, setUserRole] = useState<string>('employee')
+
+  useEffect(() => {
+    // Get user role from server
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUserRole(getUserRole(data.user))
+        }
+      })
+      .catch(() => {
+        // Default to employee if can't fetch
+        setUserRole('employee')
+      })
+  }, [])
 
   const handleSignOut = async () => {
     try {
@@ -49,6 +68,15 @@ export default function Sidebar({ user }: SidebarProps) {
       router.push('/')
     }
   }
+
+  // Filter navigation based on user role
+  const navigation = allNavigation.filter(item => 
+    item.roles.includes(userRole) || userRole === 'admin'
+  )
+
+  const roleDisplay = userRole === 'admin' ? 'Admin' 
+    : userRole === 'department_head' ? 'Department Head' 
+    : 'Employee'
 
   return (
     <>
@@ -119,7 +147,7 @@ export default function Sidebar({ user }: SidebarProps) {
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {user.email}
                 </p>
-                <p className="text-xs text-gray-500">Employee</p>
+                <p className="text-xs text-gray-500">{roleDisplay}</p>
               </div>
             </div>
             <button

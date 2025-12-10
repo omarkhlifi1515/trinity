@@ -25,15 +25,31 @@ fun EmployeesScreen() {
     val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
     val employees = remember { mutableStateOf<List<Employee>>(emptyList()) }
     val showAddDialog = remember { mutableStateOf(false) }
+    val refreshTrigger = remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     
+    // Initialize DataStorage
     LaunchedEffect(Unit) {
+        com.trinity.hrm.data.storage.DataStorage.initialize(context)
+    }
+    
+    LaunchedEffect(refreshTrigger.value) {
         val localAuth = LocalAuth(context)
         currentUser.value = localAuth.getCurrentUser()
         
-        // Load employees
+        // Load employees (syncs from cloud automatically)
         coroutineScope.launch {
             employees.value = DataStorage.getEmployees()
+        }
+    }
+    
+    // Auto-refresh to sync with web app
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(10000) // 10 seconds
+            coroutineScope.launch {
+                employees.value = DataStorage.getEmployees()
+            }
         }
     }
     
@@ -133,7 +149,7 @@ fun EmployeesScreen() {
             onAdd = { employee ->
                 coroutineScope.launch {
                     if (DataStorage.addEmployee(employee)) {
-                        employees.value = DataStorage.getEmployees()
+                        refreshTrigger.value++
                     }
                 }
             }

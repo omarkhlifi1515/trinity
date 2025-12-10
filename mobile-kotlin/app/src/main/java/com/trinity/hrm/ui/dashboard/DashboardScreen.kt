@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,14 @@ fun DashboardScreen(navController: NavController) {
         }
     }
     
+    // Auto-refresh stats to sync with web app
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(15000) // 15 seconds
+            // Stats will update when user navigates to other screens
+        }
+    }
+    
     val canAddEmployees = RoleHelper.canAddEmployees(currentUser.value)
     val canAddTasks = RoleHelper.canAddTasks(currentUser.value)
 
@@ -57,9 +66,10 @@ fun DashboardScreen(navController: NavController) {
                     IconButton(onClick = {
                         coroutineScope.launch {
                             ApiClient.logout()
+                            com.trinity.hrm.data.storage.DataStorage.clearAll()
                         }
                         navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     }) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Sign Out")

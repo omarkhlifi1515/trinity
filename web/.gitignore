@@ -25,6 +25,7 @@ yarn-error.log*
 # Local env files
 .env*.local
 .env
+.env.local
 
 # Vercel
 .vercel
@@ -36,6 +37,6 @@ google-token.json
 # JSONBin bin ID (optional - can be in env)
 JSONBIN_BIN_ID
 
-# Local data (optional - can be committed if not using Google Drive)
-/data/users.json
+# Local data (auto-created, not needed in git)
+/data/
 

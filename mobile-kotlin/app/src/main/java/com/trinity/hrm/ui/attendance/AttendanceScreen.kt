@@ -3,6 +3,8 @@ package com.trinity.hrm.ui.attendance
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.trinity.hrm.data.model.Attendance
 import com.trinity.hrm.data.remote.LocalAuth
 import com.trinity.hrm.data.storage.DataStorage
@@ -26,14 +29,30 @@ fun AttendanceScreen() {
     val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
     val attendanceList = remember { mutableStateOf<List<Attendance>>(emptyList()) }
     val showMarkDialog = remember { mutableStateOf(false) }
+    val refreshTrigger = remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     
+    // Initialize DataStorage
     LaunchedEffect(Unit) {
+        com.trinity.hrm.data.storage.DataStorage.initialize(context)
+    }
+    
+    LaunchedEffect(refreshTrigger.value) {
         val localAuth = LocalAuth(context)
         currentUser.value = localAuth.getCurrentUser()
         
         coroutineScope.launch {
             attendanceList.value = DataStorage.getAttendance()
+        }
+    }
+    
+    // Auto-refresh to sync with web app
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(10000) // 10 seconds
+            coroutineScope.launch {
+                attendanceList.value = DataStorage.getAttendance()
+            }
         }
     }
     
@@ -207,7 +226,7 @@ fun AttendanceScreen() {
             onMark = { attendance ->
                 coroutineScope.launch {
                     if (DataStorage.markAttendance(attendance)) {
-                        attendanceList.value = DataStorage.getAttendance()
+                        refreshTrigger.value++
                     }
                 }
             }

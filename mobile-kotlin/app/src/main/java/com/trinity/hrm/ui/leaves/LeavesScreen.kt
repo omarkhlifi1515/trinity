@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trinity.hrm.data.model.Leave
 import com.trinity.hrm.data.remote.LocalAuth
+import com.trinity.hrm.data.remote.RoleHelper
 import com.trinity.hrm.data.storage.DataStorage
 import kotlinx.coroutines.launch
 
@@ -24,9 +25,15 @@ fun LeavesScreen() {
     val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
     val leaves = remember { mutableStateOf<List<Leave>>(emptyList()) }
     val showAddDialog = remember { mutableStateOf(false) }
+    val refreshTrigger = remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     
+    // Initialize DataStorage
     LaunchedEffect(Unit) {
+        com.trinity.hrm.data.storage.DataStorage.initialize(context)
+    }
+    
+    LaunchedEffect(refreshTrigger.value) {
         val localAuth = LocalAuth(context)
         currentUser.value = localAuth.getCurrentUser()
         
@@ -35,7 +42,18 @@ fun LeavesScreen() {
         }
     }
     
+    // Auto-refresh to sync with web app
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(10000) // 10 seconds
+            coroutineScope.launch {
+                leaves.value = DataStorage.getLeaves()
+            }
+        }
+    }
+    
     val currentUserId = currentUser.value?.id ?: ""
+    val canApprove = RoleHelper.canAddTasks(currentUser.value) // Admin and Dept Head can approve
     
     Scaffold(
         topBar = {
@@ -117,7 +135,24 @@ fun LeavesScreen() {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(leaves.value) { leave ->
-                    LeaveCard(leave = leave)
+                    LeaveCard(
+                        leave = leave,
+                        canApprove = canApprove && leave.status == com.trinity.hrm.data.model.LeaveStatus.PENDING,
+                        onApprove = {
+                            coroutineScope.launch {
+                                if (DataStorage.approveLeave(leave.id, currentUserId)) {
+                                    refreshTrigger.value++
+                                }
+                            }
+                        },
+                        onReject = {
+                            coroutineScope.launch {
+                                if (DataStorage.rejectLeave(leave.id, currentUserId)) {
+                                    refreshTrigger.value++
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -130,7 +165,7 @@ fun LeavesScreen() {
             onAdd = { leave ->
                 coroutineScope.launch {
                     if (DataStorage.addLeave(leave)) {
-                        leaves.value = DataStorage.getLeaves()
+                        refreshTrigger.value++
                     }
                 }
             }
@@ -139,7 +174,12 @@ fun LeavesScreen() {
 }
 
 @Composable
-fun LeaveCard(leave: Leave) {
+fun LeaveCard(
+    leave: Leave,
+    canApprove: Boolean = false,
+    onApprove: () -> Unit = {},
+    onReject: () -> Unit = {}
+) {
     val statusColor = when (leave.status) {
         com.trinity.hrm.data.model.LeaveStatus.APPROVED -> androidx.compose.ui.graphics.Color(0xFF10B981)
         com.trinity.hrm.data.model.LeaveStatus.REJECTED -> androidx.compose.ui.graphics.Color(0xFFDC2626)
@@ -204,6 +244,38 @@ fun LeaveCard(leave: Leave) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            
+            // Approval buttons for Admin/Dept Head
+            if (canApprove) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onApprove,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = androidx.compose.ui.graphics.Color(0xFF10B981)
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Approve")
+                    }
+                    Button(
+                        onClick = onReject,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = androidx.compose.ui.graphics.Color(0xFFDC2626)
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Cancel, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Reject")
+                    }
+                }
             }
         }
     }

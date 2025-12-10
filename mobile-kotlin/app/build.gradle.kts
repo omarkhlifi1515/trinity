@@ -66,7 +66,15 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // HTTP Client (for local API)
+    // Supabase Kotlin SDK
+    implementation(platform("io.github.jan-tennert.supabase:bom:2.3.0"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.github.jan-tennert.supabase:functions-kt")
+    implementation("io.ktor:ktor-client-android:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-client-core:${libs.versions.ktor.get()}")
+    
+    // HTTP Client (for local API - keeping for backward compatibility)
     implementation(libs.ktor.client.android)
     implementation("io.ktor:ktor-client-content-negotiation:${libs.versions.ktor.get()}")
     implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")

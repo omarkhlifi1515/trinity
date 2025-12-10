@@ -25,15 +25,32 @@ fun MessagesScreen() {
     val messages = remember { mutableStateOf<List<Message>>(emptyList()) }
     val employees = remember { mutableStateOf<List<com.trinity.hrm.data.model.Employee>>(emptyList()) }
     val showAddDialog = remember { mutableStateOf(false) }
+    val refreshTrigger = remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     
+    // Initialize DataStorage
     LaunchedEffect(Unit) {
+        com.trinity.hrm.data.storage.DataStorage.initialize(context)
+    }
+    
+    LaunchedEffect(refreshTrigger.value) {
         val localAuth = LocalAuth(context)
         currentUser.value = localAuth.getCurrentUser()
         
         coroutineScope.launch {
+            // Sync from cloud first, then load
             messages.value = DataStorage.getMessages()
             employees.value = DataStorage.getEmployees()
+        }
+    }
+    
+    // Auto-refresh messages every 5 seconds to sync with web app
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(5000) // 5 seconds
+            coroutineScope.launch {
+                messages.value = DataStorage.getMessages()
+            }
         }
     }
     
@@ -133,6 +150,10 @@ fun MessagesScreen() {
             onAdd = { message ->
                 coroutineScope.launch {
                     if (DataStorage.addMessage(message)) {
+                        // Force immediate refresh to show new message
+                        refreshTrigger.value++
+                        // Also refresh after a short delay to ensure cloud sync
+                        kotlinx.coroutines.delay(1000)
                         messages.value = DataStorage.getMessages()
                     }
                 }

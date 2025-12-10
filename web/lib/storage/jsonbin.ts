@@ -17,7 +17,20 @@ const BIN_ID_KEY = 'TRINITY_HRM_BIN_ID'
 function getApiKey(): string {
   const key = process.env.JSONBIN_API_KEY || ''
   // Trim and validate
-  return key.trim()
+  const trimmed = key.trim()
+  
+  // Debug: Log in development (server-side only)
+  if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+    if (trimmed) {
+      console.log('✅ JSONBin API key loaded:', trimmed.substring(0, 10) + '...')
+    } else {
+      console.warn('⚠️ JSONBIN_API_KEY not found in environment variables')
+      console.warn('   Make sure .env exists in web/ folder with:')
+      console.warn('   JSONBIN_API_KEY=your_key_here')
+    }
+  }
+  
+  return trimmed
 }
 
 // Get or create bin ID

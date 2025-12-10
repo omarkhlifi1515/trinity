@@ -3,35 +3,39 @@
 import { useEffect, useState } from 'react'
 import { Briefcase, Plus, CheckCircle2, Circle, Clock } from 'lucide-react'
 import Link from 'next/link'
-
-interface Task {
-  id: string
-  title: string
-  description: string
-  status: 'pending' | 'in_progress' | 'completed'
-  priority: 'low' | 'medium' | 'high'
-  assigned_to: string
-  due_date: string
-}
+import { canAddTasks } from '@/lib/auth/roles'
+import { getTasks, Task } from '@/lib/storage/supabase-storage'
 
 export default function TasksContent() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
+  const [user, setUser] = useState<any>(null)
+  const [canAdd, setCanAdd] = useState(false)
 
   useEffect(() => {
+    loadUser()
     loadTasks()
   }, [])
+
+  const loadUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json()
+      if (data.user) {
+        setUser(data.user)
+        setCanAdd(canAddTasks(data.user))
+      }
+    } catch (error) {
+      console.error('Error loading user:', error)
+    }
+  }
 
   const loadTasks = async () => {
     try {
       setLoading(true)
-      // Load tasks from Supabase
-      // Example: const { data } = await supabase.from('tasks').select('*')
-      // setTasks(data || [])
-      
-      // Placeholder data
-      setTasks([])
+      const data = await getTasks()
+      setTasks(data)
     } catch (error) {
       console.error('Error loading tasks:', error)
     } finally {
@@ -41,7 +45,12 @@ export default function TasksContent() {
 
   const filteredTasks = filter === 'all' 
     ? tasks 
-    : tasks.filter(task => task.status === filter)
+    : tasks.filter(task => {
+        if (filter === 'completed') return task.status === 'completed'
+        if (filter === 'in_progress') return task.status === 'in_progress'
+        if (filter === 'pending') return task.status === 'pending'
+        return true
+      })
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -72,13 +81,15 @@ export default function TasksContent() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Tasks</h1>
           <p className="text-gray-600">Manage and track tasks</p>
         </div>
-        <Link
-          href="/dashboard/tasks/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Create Task
-        </Link>
+        {canAdd && (
+          <Link
+            href="/dashboard/tasks/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Create Task
+          </Link>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -107,14 +118,18 @@ export default function TasksContent() {
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Tasks Yet</h3>
-          <p className="text-gray-600 mb-6">Create your first task to get started</p>
-          <Link
-            href="/dashboard/tasks/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Create Task
-          </Link>
+          <p className="text-gray-600 mb-6">
+            {canAdd ? 'Create your first task to get started' : 'No tasks assigned yet'}
+          </p>
+          {canAdd && (
+            <Link
+              href="/dashboard/tasks/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Create Task
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -129,9 +144,11 @@ export default function TasksContent() {
                   {task.priority}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mb-4 line-clamp-2">{task.description}</p>
+              {task.description && (
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{task.description}</p>
+              )}
               <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                {task.dueDate && <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>}
                 <a href={`/dashboard/tasks/${task.id}`} className="text-blue-600 hover:text-blue-700">
                   View →
                 </a>

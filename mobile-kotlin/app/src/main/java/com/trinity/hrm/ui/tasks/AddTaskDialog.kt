@@ -1,6 +1,8 @@
 package com.trinity.hrm.ui.tasks
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -11,6 +13,7 @@ import com.trinity.hrm.data.model.TaskPriority
 import com.trinity.hrm.data.model.TaskStatus
 import java.time.Instant
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskDialog(
     employees: List<com.trinity.hrm.data.model.Employee>,

@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { Users, Briefcase, Calendar, CalendarDays, MessageSquare, Building2 } from 'lucide-react'
+import { canAddEmployees, canAddTasks, getUserRole } from '@/lib/auth/roles'
+import { getEmployees, getTasks, getLeaves, getMessages, getAttendance, getDepartments } from '@/lib/storage/supabase-storage'
 
 interface User {
   id: string
   email: string
+  role?: 'admin' | 'department_head' | 'employee'
+  department?: string
 }
 
 interface DashboardContentProps {
@@ -21,20 +25,39 @@ export default function DashboardContent({ user }: DashboardContentProps) {
     departments: 0,
     messages: 0,
   })
+  const [userRole, setUserRole] = useState<string>('employee')
 
   useEffect(() => {
     loadStats()
-  }, [])
+    setUserRole(getUserRole(user))
+  }, [user])
 
   const loadStats = async () => {
     try {
-      // Load stats from your data source
-      // These are placeholders - implement based on your storage solution
-      // For now, stats are set to 0
+      const [employees, tasks, leaves, messages, attendance, departments] = await Promise.all([
+        getEmployees(),
+        getTasks(),
+        getLeaves(),
+        getMessages(),
+        getAttendance(),
+        getDepartments(),
+      ])
+
+      setStats({
+        employees: employees.length,
+        tasks: tasks.length,
+        attendance: attendance.length,
+        leaves: leaves.length,
+        departments: departments.length,
+        messages: messages.length,
+      })
     } catch (error) {
       console.error('Error loading stats:', error)
     }
   }
+
+  const canAddEmp = canAddEmployees(user)
+  const canAddTask = canAddTasks(user)
 
   return (
     <div className="p-8">
@@ -45,20 +68,24 @@ export default function DashboardContent({ user }: DashboardContentProps) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <StatCard
-          title="Employees"
-          value={stats.employees}
-          icon={Users}
-          color="blue"
-          href="/dashboard/employees"
-        />
-        <StatCard
-          title="Departments"
-          value={stats.departments}
-          icon={Building2}
-          color="purple"
-          href="/dashboard/departments"
-        />
+        {canAddEmp && (
+          <>
+            <StatCard
+              title="Employees"
+              value={stats.employees}
+              icon={Users}
+              color="blue"
+              href="/dashboard/employees"
+            />
+            <StatCard
+              title="Departments"
+              value={stats.departments}
+              icon={Building2}
+              color="purple"
+              href="/dashboard/departments"
+            />
+          </>
+        )}
         <StatCard
           title="Tasks"
           value={stats.tasks}
@@ -93,22 +120,26 @@ export default function DashboardContent({ user }: DashboardContentProps) {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <a
-            href="/dashboard/employees/new"
-            className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-          >
-            <Users className="w-6 h-6 text-blue-600 mb-2" />
-            <h3 className="font-medium text-gray-900">Add Employee</h3>
-            <p className="text-sm text-gray-600">Create a new employee record</p>
-          </a>
-          <a
-            href="/dashboard/tasks/new"
-            className="p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-          >
-            <Briefcase className="w-6 h-6 text-green-600 mb-2" />
-            <h3 className="font-medium text-gray-900">Create Task</h3>
-            <p className="text-sm text-gray-600">Assign a new task</p>
-          </a>
+          {canAddEmp && (
+            <a
+              href="/dashboard/employees/new"
+              className="p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+            >
+              <Users className="w-6 h-6 text-blue-600 mb-2" />
+              <h3 className="font-medium text-gray-900">Add Employee</h3>
+              <p className="text-sm text-gray-600">Create a new employee record</p>
+            </a>
+          )}
+          {canAddTask && (
+            <a
+              href="/dashboard/tasks/new"
+              className="p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+            >
+              <Briefcase className="w-6 h-6 text-green-600 mb-2" />
+              <h3 className="font-medium text-gray-900">Create Task</h3>
+              <p className="text-sm text-gray-600">Assign a new task</p>
+            </a>
+          )}
           <a
             href="/dashboard/attendance/mark"
             className="p-4 border border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
@@ -116,6 +147,14 @@ export default function DashboardContent({ user }: DashboardContentProps) {
             <Calendar className="w-6 h-6 text-orange-600 mb-2" />
             <h3 className="font-medium text-gray-900">Mark Attendance</h3>
             <p className="text-sm text-gray-600">Record attendance</p>
+          </a>
+          <a
+            href="/dashboard/leaves/new"
+            className="p-4 border border-gray-200 rounded-lg hover:border-pink-500 hover:bg-pink-50 transition-colors"
+          >
+            <CalendarDays className="w-6 h-6 text-pink-600 mb-2" />
+            <h3 className="font-medium text-gray-900">Request Leave</h3>
+            <p className="text-sm text-gray-600">Submit a leave request</p>
           </a>
         </div>
       </div>

@@ -3,32 +3,39 @@
 import { useEffect, useState } from 'react'
 import { Users, Plus, Search } from 'lucide-react'
 import Link from 'next/link'
-
-interface Employee {
-  id: string
-  name: string
-  email: string
-  department: string
-  position: string
-  created_at: string
-}
+import { canAddEmployees } from '@/lib/auth/roles'
+import { getEmployees, addEmployee, Employee } from '@/lib/storage/supabase-storage'
 
 export default function EmployeesContent() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [user, setUser] = useState<any>(null)
+  const [canAdd, setCanAdd] = useState(false)
 
   useEffect(() => {
+    loadUser()
     loadEmployees()
   }, [])
+
+  const loadUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json()
+      if (data.user) {
+        setUser(data.user)
+        setCanAdd(canAddEmployees(data.user))
+      }
+    } catch (error) {
+      console.error('Error loading user:', error)
+    }
+  }
 
   const loadEmployees = async () => {
     try {
       setLoading(true)
-      // Load employees from your data source
-      // For now, using placeholder data
-      // TODO: Implement data loading from your storage solution
-      setEmployees([])
+      const data = await getEmployees()
+      setEmployees(data)
     } catch (error) {
       console.error('Error loading employees:', error)
     } finally {
@@ -48,13 +55,15 @@ export default function EmployeesContent() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Employees</h1>
           <p className="text-gray-600">Manage your employee records</p>
         </div>
-        <Link
-          href="/dashboard/employees/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Employee
-        </Link>
+        {canAdd && (
+          <Link
+            href="/dashboard/employees/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Employee
+          </Link>
+        )}
       </div>
 
       {/* Search */}
@@ -81,14 +90,18 @@ export default function EmployeesContent() {
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Employees Yet</h3>
-          <p className="text-gray-600 mb-6">Get started by adding your first employee</p>
-          <Link
-            href="/dashboard/employees/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Add Employee
-          </Link>
+          <p className="text-gray-600 mb-6">
+            {canAdd ? 'Get started by adding your first employee' : 'No employees available'}
+          </p>
+          {canAdd && (
+            <Link
+              href="/dashboard/employees/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Add Employee
+            </Link>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -129,10 +142,10 @@ export default function EmployeesContent() {
                     {employee.email}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.department}
+                    {employee.department || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.position}
+                    {employee.position || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <a href={`/dashboard/employees/${employee.id}`} className="text-blue-600 hover:text-blue-900">

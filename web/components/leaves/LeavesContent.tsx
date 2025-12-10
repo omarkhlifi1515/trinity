@@ -3,41 +3,76 @@
 import { useEffect, useState } from 'react'
 import { CalendarDays, Plus, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
-
-interface Leave {
-  id: string
-  employee_name: string
-  type: string
-  start_date: string
-  end_date: string
-  days: number
-  status: 'pending' | 'approved' | 'rejected'
-  reason: string
-}
+import { getLeaves, Leave, getEmployees, Employee } from '@/lib/storage/supabase-storage'
+import { canAddTasks, getUserRole } from '@/lib/auth/roles'
 
 export default function LeavesContent() {
   const [leaves, setLeaves] = useState<Leave[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [user, setUser] = useState<any>(null)
+  const [canApprove, setCanApprove] = useState(false)
+  const [canRequest, setCanRequest] = useState(true)
 
   useEffect(() => {
-    loadLeaves()
+    loadUser()
+    loadData()
   }, [])
 
-  const loadLeaves = async () => {
+  const loadUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json()
+      if (data.user) {
+        setUser(data.user)
+        const role = getUserRole(data.user)
+        setCanApprove(role === 'admin' || role === 'department_head')
+        setCanRequest(true) // All users can request leaves
+      }
+    } catch (error) {
+      console.error('Error loading user:', error)
+    }
+  }
+
+  const loadData = async () => {
     try {
       setLoading(true)
-      // Load leaves from Supabase
-      // Example: const { data } = await supabase.from('leaves').select('*')
-      // setLeaves(data || [])
-      
-      // Placeholder data
-      setLeaves([])
+      const [leavesData, employeesData] = await Promise.all([
+        getLeaves(),
+        getEmployees(),
+      ])
+      setLeaves(leavesData)
+      setEmployees(employeesData)
     } catch (error) {
-      console.error('Error loading leaves:', error)
+      console.error('Error loading data:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleApprove = async (leaveId: string, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch(`/api/leaves/${leaveId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+
+      if (res.ok) {
+        await loadData() // Reload leaves
+      } else {
+        alert('Failed to update leave status')
+      }
+    } catch (error) {
+      console.error('Error approving leave:', error)
+      alert('Error updating leave status')
+    }
+  }
+
+  const getEmployeeName = (employeeId: string) => {
+    const employee = employees.find(e => e.id === employeeId)
+    return employee?.name || employee?.email || 'Unknown'
   }
 
   const filteredLeaves = filter === 'all' 
@@ -60,15 +95,19 @@ export default function LeavesContent() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Leave Management</h1>
-          <p className="text-gray-600">Manage employee leave requests</p>
+          <p className="text-gray-600">
+            {canApprove ? 'Manage employee leave requests' : 'View and request leaves'}
+          </p>
         </div>
-        <Link
-          href="/dashboard/leaves/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Request Leave
-        </Link>
+        {canRequest && (
+          <Link
+            href="/dashboard/leaves/new"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Request Leave
+          </Link>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -97,14 +136,18 @@ export default function LeavesContent() {
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <CalendarDays className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Leave Requests</h3>
-          <p className="text-gray-600 mb-6">Submit your first leave request</p>
-          <Link
-            href="/dashboard/leaves/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Request Leave
-          </Link>
+          <p className="text-gray-600 mb-6">
+            {canRequest ? 'Submit your first leave request' : 'No leave requests available'}
+          </p>
+          {canRequest && (
+            <Link
+              href="/dashboard/leaves/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Request Leave
+            </Link>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -132,33 +175,59 @@ export default function LeavesContent() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLeaves.map((leave) => (
-                <tr key={leave.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{leave.employee_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {leave.type}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {leave.days} days
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(leave.status)}
-                      <span className="text-sm text-gray-900 capitalize">{leave.status}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href={`/dashboard/leaves/${leave.id}`} className="text-blue-600 hover:text-blue-900">
-                      View
-                    </a>
-                  </td>
-                </tr>
-              ))}
+              {filteredLeaves.map((leave) => {
+                const days = Math.ceil(
+                  (new Date(leave.endDate).getTime() - new Date(leave.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                ) + 1
+                return (
+                  <tr key={leave.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{getEmployeeName(leave.employeeId)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                      {leave.type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {days} days
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(leave.status)}
+                        <span className="text-sm text-gray-900 capitalize">{leave.status}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        {canApprove && leave.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(leave.id, 'approve')}
+                              className="text-green-600 hover:text-green-900 font-medium"
+                            >
+                              Approve
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button
+                              onClick={() => handleApprove(leave.id, 'reject')}
+                              className="text-red-600 hover:text-red-900 font-medium"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {!canApprove && (
+                          <a href={`/dashboard/leaves/${leave.id}`} className="text-blue-600 hover:text-blue-900">
+                            View
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

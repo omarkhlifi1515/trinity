@@ -23,7 +23,7 @@ export interface User {
 let users: User[] = []
 let usersLoaded = false
 
-// Load users from JSONBin or local file
+// Load users from Supabase or local file (fallback)
 async function loadUsers() {
   // Skip in browser or Edge Runtime
   if (typeof window !== 'undefined' || usersLoaded) {
@@ -37,25 +37,33 @@ async function loadUsers() {
   }
 
   try {
-    // Try JSONBin first (free cloud storage)
-    const { readUsersFromJSONBin, readUsersFromLocal } = await import('@/lib/storage/jsonbin')
-    const jsonbinUsers = await readUsersFromJSONBin()
+    // Try Supabase first
+    try {
+      const supabaseUsers = await loadUsersFromSupabase()
+      if (supabaseUsers.length > 0) {
+        users = supabaseUsers
+        console.log('✅ Loaded users from Supabase')
+        usersLoaded = true
+        return
+      }
+    } catch (supabaseError: any) {
+      // Supabase not configured or table doesn't exist, fall back to local
+      if (!supabaseError.message?.includes('not initialized')) {
+        console.log('⚠️ Supabase not available, using local storage')
+      }
+    }
     
-    if (jsonbinUsers.length > 0) {
-      users = jsonbinUsers
-      console.log('✅ Loaded users from JSONBin')
-    } else {
-      // Fallback to local file (only in Node.js runtime)
-      try {
-        users = readUsersFromLocal()
-        if (users.length > 0) {
-          console.log('✅ Loaded users from local file')
-        }
-      } catch (e: any) {
-        // Silently fail in Edge Runtime
-        if (!e.message?.includes('Edge Runtime') && !e.message?.includes('process.cwd')) {
-          console.error('Error loading from local file:', e)
-        }
+    // Fallback to local file (only in Node.js runtime)
+    try {
+      const { readUsersFromLocal } = await import('@/lib/storage/jsonbin')
+      users = readUsersFromLocal()
+      if (users.length > 0) {
+        console.log('✅ Loaded users from local file')
+      }
+    } catch (e: any) {
+      // Silently fail in Edge Runtime
+      if (!e.message?.includes('Edge Runtime') && !e.message?.includes('process.cwd')) {
+        console.error('Error loading from local file:', e)
       }
     }
   } catch (error: any) {
@@ -71,6 +79,37 @@ async function loadUsers() {
   usersLoaded = true
 }
 
+// Load users from Supabase
+async function loadUsersFromSupabase(): Promise<User[]> {
+  try {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+    
+    if (error) {
+      // Table doesn't exist, return empty
+      return []
+    }
+    
+    return (data || []).map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      password: u.password,
+      createdAt: u.created_at || new Date().toISOString(),
+      role: u.role as UserRole,
+      department: u.department,
+    }))
+  } catch (error: any) {
+    if (error.message?.includes('not initialized') || error.message?.includes('NEXT_PUBLIC_SUPABASE')) {
+      throw error // Re-throw to trigger fallback
+    }
+    return []
+  }
+}
+
 async function saveUsers() {
   // Skip in browser or Edge Runtime
   if (typeof window !== 'undefined') {
@@ -83,22 +122,29 @@ async function saveUsers() {
   }
 
   try {
-    // Try JSONBin first (free cloud storage)
-    const { writeUsersToJSONBin, writeUsersToLocal } = await import('@/lib/storage/jsonbin')
-    const success = await writeUsersToJSONBin(users)
+    // Try Supabase first
+    try {
+      const success = await saveUsersToSupabase(users)
+      if (success) {
+        console.log('✅ Saved users to Supabase')
+        return
+      }
+    } catch (supabaseError: any) {
+      // Supabase not configured, fall back to local
+      if (!supabaseError.message?.includes('not initialized')) {
+        console.log('⚠️ Supabase not available, using local storage')
+      }
+    }
     
-    if (success) {
-      console.log('✅ Saved users to JSONBin')
-    } else {
-      // Fallback to local file (only in Node.js runtime)
-      try {
-        writeUsersToLocal(users)
-        console.log('✅ Saved users to local file (JSONBin unavailable)')
-      } catch (e: any) {
-        // Silently fail in Edge Runtime
-        if (!e.message?.includes('Edge Runtime') && !e.message?.includes('process.cwd')) {
-          console.error('Error saving to local file:', e)
-        }
+    // Fallback to local file (only in Node.js runtime)
+    try {
+      const { writeUsersToLocal } = await import('@/lib/storage/jsonbin')
+      writeUsersToLocal(users)
+      console.log('✅ Saved users to local file')
+    } catch (e: any) {
+      // Silently fail in Edge Runtime
+      if (!e.message?.includes('Edge Runtime') && !e.message?.includes('process.cwd')) {
+        console.error('Error saving to local file:', e)
       }
     }
   } catch (error: any) {
@@ -107,6 +153,39 @@ async function saveUsers() {
       return
     }
     console.error('Error saving users:', error)
+  }
+}
+
+// Save users to Supabase
+async function saveUsersToSupabase(users: User[]): Promise<boolean> {
+  try {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+    
+    const usersToSave = users.map(u => ({
+      id: u.id,
+      email: u.email,
+      password: u.password,
+      created_at: u.createdAt,
+      role: u.role || 'employee',
+      department: u.department,
+    }))
+    
+    const { error } = await supabase
+      .from('users')
+      .upsert(usersToSave, { onConflict: 'id' })
+    
+    if (error) {
+      // Table might not exist, that's okay
+      return false
+    }
+    
+    return true
+  } catch (error: any) {
+    if (error.message?.includes('not initialized') || error.message?.includes('NEXT_PUBLIC_SUPABASE')) {
+      throw error // Re-throw to trigger fallback
+    }
+    return false
   }
 }
 
