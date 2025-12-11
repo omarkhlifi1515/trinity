@@ -1,98 +1,128 @@
-# Troubleshooting JSONBin API Key Issues
+# 🔧 Firebase Web App - Troubleshooting Guide
 
-## Problem: "⚠️ JSONBin API key not set. Using local storage."
+## Common Issues & Solutions
 
-### Solution 1: Restart Dev Server
-**Most common fix!** Next.js only loads `.env` on startup.
+### ❌ Error: "Cannot find module './vendor-chunks/@firebase.js'"
 
-1. **Stop the dev server** (Ctrl+C)
-2. **Start it again:**
-   ```bash
-   npm run dev
-   ```
+**Cause:** Next.js build cache is stale after adding Firebase dependencies.
 
-### Solution 2: Check .env Format
-Make sure your `.env` file looks exactly like this:
-
-```env
-JSONBIN_API_KEY=$2a$10$XtgiWhpdzGwCmy0M915kdu9zNMfZi41jHYYGbimNLgjSSBmpFdJKq
-AUTH_SECRET=your-secret-key-min-32-chars-long
-```
-
-**Common mistakes:**
-- ❌ Extra spaces: `JSONBIN_API_KEY = value` (should be no spaces around `=`)
-- ❌ Quotes: `JSONBIN_API_KEY="value"` (quotes not needed)
-- ❌ Wrong file: Make sure it's `.env` in the `web/` folder
-
-### Solution 3: Verify File Location
-The `.env` file must be in the `web/` directory:
-
-```
-trinity/
-└── web/
-    ├── .env    ← Must be here!
-    ├── package.json
-    └── ...
-```
-
-### Solution 4: Check API Key Format
-Your JSONBin Master Key should:
-- Start with `$2a$10$` or `$2b$10$`
-- Be about 60 characters long
-- Have no spaces or line breaks
-
-### Solution 5: Test Environment Variable
-Add this temporarily to see if it's loading:
-
-**In `web/lib/storage/jsonbin.ts`, the debug logging is already added!**
-Check the server console for: `✅ JSONBin API key loaded: ...`
-
-### Solution 6: Clear Next.js Cache
-Sometimes Next.js caches environment variables:
-
+**Solution:**
 ```bash
-# Delete .next folder
-rm -rf .next
+# Stop the dev server (Ctrl+C)
 
-# Or on Windows:
-rmdir /s .next
+# Delete the .next folder
+Remove-Item -Path ".next" -Recurse -Force
 
-# Then restart
+# Restart dev server
 npm run dev
 ```
 
-### Solution 7: Check Server vs Client
-The warning might appear in the browser console, but the API key only works on the server.
+---
 
-- ✅ Server-side (API routes): Can access `process.env.JSONBIN_API_KEY`
-- ❌ Client-side (browser): Cannot access `process.env.JSONBIN_API_KEY`
+### ❌ Login works but stays on login page
 
-If you see the warning in browser console, it's normal - the server still has access.
+**Cause:** Dashboard components were using Supabase server-side auth.
 
-## Still Not Working?
+**Fixed in:** 
+- `app/dashboard/layout.tsx` - Now uses Firebase client-side auth
+- `app/dashboard/page.tsx` - Converted to client component
+- `components/layout/Sidebar.tsx` - Updated logout to use Firebase
 
-1. **Verify API key is valid:**
-   - Go to https://jsonbin.io/app/dashboard
-   - Check your Master Key matches what's in `.env`
+**Solution:** Already fixed! Just refresh the page.
 
-2. **Check for typos:**
-   - Variable name must be exactly: `JSONBIN_API_KEY`
-   - No typos, no extra characters
+---
 
-3. **Try a fresh start:**
-   ```bash
-   # Stop server
-   # Delete .next folder
-   # Restart
-   npm run dev
-   ```
+### ❌ "Auth session missing" errors
 
-## Quick Test
+**Cause:** Old Supabase cookies or middleware blocking requests.
 
-After restarting, you should see in the server console (not browser):
-- ✅ `✅ Loaded X users from JSONBin` (if you have users)
-- ✅ `✅ Created new JSONBin: ...` (on first use)
-- ❌ `⚠️ JSONBin API key not set` (means it's not loading)
+**Solution:**
+1. Clear browser cookies for localhost:3000
+2. Middleware has been simplified for Firebase
+3. Try logging in again
 
-If you still see the warning after restarting, check the file format and location!
+---
 
+### ✅ How to Verify Everything Works
+
+1. **Clear Browser Cache:**
+   - Open DevTools (F12)
+   - Application → Clear storage → Clear site data
+
+2. **Test Login:**
+   - Go to http://localhost:3000
+   - Log in with your credentials
+   - Should redirect to `/dashboard` ✅
+
+3. **Test Signup:**
+   - Go to signup page
+   - Create new account
+   - Should redirect to `/dashboard` ✅
+
+4. **Test Logout:**
+   - Click logout in sidebar
+   - Should redirect to `/` ✅
+
+---
+
+### 🔍 Debugging Tips
+
+**Check Firebase Auth in Console:**
+```javascript
+// In browser console
+import { auth } from '@/lib/firebase/config'
+console.log('Current user:', auth.currentUser)
+```
+
+**Check Network Tab:**
+- Should see Firebase API calls to `identitytoolkit.googleapis.com`
+- Should NOT see Supabase calls
+
+**Check Console Logs:**
+- Look for "✅ Login successful! User: [email]"
+- Look for "Dashboard layout: User is PRESENT: [email]"
+
+---
+
+### 📝 Quick Reference
+
+**Firebase Config:** `web/lib/firebase/config.ts`  
+**Auth Client:** `web/lib/firebase/auth.ts`  
+**Login Page:** `components/auth/LoginPage.tsx`  
+**Signup Page:** `components/auth/SignupPage.tsx`  
+**Dashboard Layout:** `app/dashboard/layout.tsx`  
+**Auth Guard:** `components/auth/AuthGuard.tsx`
+
+---
+
+### 🚀 If All Else Fails
+
+**Complete Reset:**
+```bash
+# Stop server
+Ctrl+C
+
+# Clean everything
+Remove-Item -Path ".next" -Recurse -Force
+Remove-Item -Path "node_modules" -Recurse -Force
+
+# Reinstall
+npm install
+
+# Start fresh
+npm run dev
+```
+
+---
+
+### ✅ Success Indicators
+
+- ✅ No Supabase errors in console
+- ✅ Firebase auth calls in Network tab
+- ✅ Login redirects to dashboard
+- ✅ Dashboard shows user email
+- ✅ Logout works properly
+
+---
+
+**Need Help?** Check the main setup guide: `FIREBASE_SETUP.md`

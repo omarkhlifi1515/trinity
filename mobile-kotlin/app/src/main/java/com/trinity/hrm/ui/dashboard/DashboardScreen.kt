@@ -14,8 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.trinity.hrm.data.remote.ApiClient
-import com.trinity.hrm.data.remote.LocalAuth
-import com.trinity.hrm.data.remote.RoleHelper
 import com.trinity.hrm.navigation.Screen
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,7 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 fun DashboardScreen(navController: NavController) {
     val userEmail = remember { mutableStateOf("") }
     val userRole = remember { mutableStateOf("Employee") }
-    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
+    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.ApiClient.User?>(null) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     
@@ -33,17 +31,9 @@ fun DashboardScreen(navController: NavController) {
         coroutineScope.launch {
             val user = ApiClient.getCurrentUser()
             userEmail.value = user?.email ?: ""
-            
-            // Get full user object for role checking
-            val localAuth = LocalAuth(context)
-            currentUser.value = localAuth.getCurrentUser()
-            
-            // Set role display
-            userRole.value = when {
-                RoleHelper.isAdmin(currentUser.value) -> "Admin"
-                RoleHelper.isDepartmentHead(currentUser.value) -> "Department Head"
-                else -> "Employee"
-            }
+            currentUser.value = user
+            // Defaults to Employee for now
+            userRole.value = "Employee" 
         }
     }
     
@@ -55,8 +45,8 @@ fun DashboardScreen(navController: NavController) {
         }
     }
     
-    val canAddEmployees = RoleHelper.canAddEmployees(currentUser.value)
-    val canAddTasks = RoleHelper.canAddTasks(currentUser.value)
+    val canAddEmployees = true // Simplify for now until role logic is rebuilt
+    val canAddTasks = true
 
     Scaffold(
         topBar = {

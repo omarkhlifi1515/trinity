@@ -29,7 +29,7 @@ async function loadUsers() {
   if (typeof window !== 'undefined' || usersLoaded) {
     return
   }
-  
+
   // Skip in Edge Runtime (middleware)
   if (typeof process === 'undefined' || typeof process.cwd !== 'function') {
     usersLoaded = true
@@ -52,7 +52,7 @@ async function loadUsers() {
         console.log('⚠️ Supabase not available, using local storage')
       }
     }
-    
+
     // Fallback to local file (only in Node.js runtime)
     try {
       const { readUsersFromLocal } = await import('@/lib/storage/jsonbin')
@@ -75,7 +75,7 @@ async function loadUsers() {
     console.error('Error loading users:', error)
     users = []
   }
-  
+
   usersLoaded = true
 }
 
@@ -84,16 +84,16 @@ async function loadUsersFromSupabase(): Promise<User[]> {
   try {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
-    
+
     const { data, error } = await supabase
       .from('users')
       .select('*')
-    
+
     if (error) {
       // Table doesn't exist, return empty
       return []
     }
-    
+
     return (data || []).map((u: any) => ({
       id: u.id,
       email: u.email,
@@ -115,7 +115,7 @@ async function saveUsers() {
   if (typeof window !== 'undefined') {
     return
   }
-  
+
   // Skip in Edge Runtime (middleware)
   if (typeof process === 'undefined' || typeof process.cwd !== 'function') {
     return
@@ -135,7 +135,7 @@ async function saveUsers() {
         console.log('⚠️ Supabase not available, using local storage')
       }
     }
-    
+
     // Fallback to local file (only in Node.js runtime)
     try {
       const { writeUsersToLocal } = await import('@/lib/storage/jsonbin')
@@ -161,7 +161,7 @@ async function saveUsersToSupabase(users: User[]): Promise<boolean> {
   try {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
-    
+
     const usersToSave = users.map(u => ({
       id: u.id,
       email: u.email,
@@ -170,16 +170,16 @@ async function saveUsersToSupabase(users: User[]): Promise<boolean> {
       role: u.role || 'employee',
       department: u.department,
     }))
-    
+
     const { error } = await supabase
       .from('users')
       .upsert(usersToSave, { onConflict: 'id' })
-    
+
     if (error) {
       // Table might not exist, that's okay
       return false
     }
-    
+
     return true
   } catch (error: any) {
     if (error.message?.includes('not initialized') || error.message?.includes('NEXT_PUBLIC_SUPABASE')) {
@@ -191,7 +191,7 @@ async function saveUsersToSupabase(users: User[]): Promise<boolean> {
 
 // Load users on module load (async)
 if (typeof window === 'undefined') {
-  loadUsers().catch(console.error)
+  // loadUsers().catch(console.error) 
 }
 
 export async function createToken(userId: string, email: string): Promise<string> {
@@ -200,7 +200,7 @@ export async function createToken(userId: string, email: string): Promise<string
     .setIssuedAt()
     .setExpirationTime('7d')
     .sign(SECRET_KEY)
-  
+
   return token
 }
 
@@ -216,27 +216,38 @@ export async function verifyToken(token: string): Promise<{ userId: string; emai
   }
 }
 
-export async function getCurrentUser(): Promise<{ id: string; email: string } | null> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(COOKIE_NAME)?.value
-  
-  if (!token) {
+export async function getCurrentUser(): Promise<{ id: string; email: string; role?: UserRole; department?: string; createdAt?: string } | null> {
+  try {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      console.log('Server Auth Debug: User check failed.', {
+        hasError: !!error,
+        errorMsg: error?.message,
+        hasUser: !!user
+      })
+      if (error) console.error('Server Auth Error:', error)
+      return null
+    }
+
+    return {
+      id: user.id,
+      email: user.email!,
+      role: (user.user_metadata?.role as UserRole) || 'employee',
+      department: user.user_metadata?.department,
+      createdAt: user.created_at
+    }
+  } catch (e) {
+    console.warn("Auth check failed", e)
     return null
-  }
-  
-  const payload = await verifyToken(token)
-  if (!payload) {
-    return null
-  }
-  
-  return {
-    id: payload.userId,
-    email: payload.email,
   }
 }
 
 export async function setAuthCookie(token: string) {
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -247,7 +258,7 @@ export async function setAuthCookie(token: string) {
 }
 
 export async function clearAuthCookie() {
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   cookieStore.delete(COOKIE_NAME)
 }
 
@@ -265,21 +276,21 @@ export function verifyPassword(password: string, hashedPassword: string): boolea
 
 export async function createUser(email: string, password: string): Promise<User> {
   await loadUsers()
-  
+
   // Check if user already exists
   if (users.find(u => u.email === email)) {
     throw new Error('User already exists')
   }
-  
+
   // Determine role based on email
   let role: UserRole = 'employee'
   let department: string | undefined = undefined
-  
+
   if (email.toLowerCase() === 'admin@gmail.com') {
     role = 'admin'
   }
   // You can add more logic here to assign department_head role
-  
+
   const user: User = {
     id: Date.now().toString(),
     email,
@@ -288,26 +299,26 @@ export async function createUser(email: string, password: string): Promise<User>
     role,
     department,
   }
-  
+
   users.push(user)
   await saveUsers()
-  
+
   return user
 }
 
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
   await loadUsers()
-  
+
   const user = users.find(u => u.email === email)
-  
+
   if (!user) {
     return null
   }
-  
+
   if (!verifyPassword(password, user.password)) {
     return null
   }
-  
+
   return user
 }
 

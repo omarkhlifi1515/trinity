@@ -1,24 +1,18 @@
 package com.trinity.hrm.data.remote
 
 import android.content.Context
+import com.google.firebase.auth.FirebaseAuthException
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.Serializable
 
 /**
- * Local Authentication API Client
- * Uses JSONBin.io for shared data storage with web and React Native apps
- * No web app connection needed!
- * 
- * All three apps share the same JSONBin.io database:
- * - Web app (Next.js)
- * - React Native app
- * - Kotlin app (Android)
+ * Unified API Client
+ * Uses Firebase Auth for authentication across Web and Mobile apps
  */
 object ApiClient {
-    // Use LocalAuth for authentication
-    private var localAuth: LocalAuth? = null
-    
+
     fun initialize(context: Context) {
-        localAuth = LocalAuth(context)
+        FirebaseClient.initialize(context)
     }
     
     @Serializable
@@ -32,25 +26,51 @@ object ApiClient {
         val user: User
     )
     
-    suspend fun login(email: String, password: String): AuthResponse {
-        val auth = localAuth ?: throw IllegalStateException("ApiClient not initialized. Call initialize(context) first.")
-        val user = auth.login(email, password)
-        return AuthResponse(User(user.id, user.email))
+    suspend fun login(userEmail: String, userPassword: String): AuthResponse {
+        try {
+            val result = FirebaseClient.auth.signInWithEmailAndPassword(userEmail, userPassword).await()
+            val firebaseUser = result.user ?: throw Exception("Login succeeded but user is null")
+            
+            return AuthResponse(User(
+                id = firebaseUser.uid,
+                email = firebaseUser.email ?: userEmail
+            ))
+        } catch (e: FirebaseAuthException) {
+            throw Exception("Login failed: ${e.message}")
+        } catch (e: Exception) {
+            throw Exception("Login failed: ${e.message}")
+        }
     }
     
-    suspend fun signup(email: String, password: String): AuthResponse {
-        val auth = localAuth ?: throw IllegalStateException("ApiClient not initialized. Call initialize(context) first.")
-        val user = auth.signup(email, password)
-        return AuthResponse(User(user.id, user.email))
+    suspend fun signup(userEmail: String, userPassword: String): AuthResponse {
+        try {
+            val result = FirebaseClient.auth.createUserWithEmailAndPassword(userEmail, userPassword).await()
+            val firebaseUser = result.user ?: throw Exception("Signup succeeded but user is null")
+            
+            return AuthResponse(User(
+                id = firebaseUser.uid,
+                email = firebaseUser.email ?: userEmail
+            ))
+        } catch (e: FirebaseAuthException) {
+            throw Exception("Signup failed: ${e.message}")
+        } catch (e: Exception) {
+            throw Exception("Signup failed: ${e.message}")
+        }
     }
     
-    fun logout() {
-        localAuth?.logout()
+    suspend fun logout() {
+        try {
+            FirebaseClient.auth.signOut()
+        } catch (e: Exception) {
+            println("Logout error: ${e.message}")
+        }
     }
     
-    fun getCurrentUser(): User? {
-        val user = localAuth?.getCurrentUser() ?: return null
-        return User(user.id, user.email)
+    suspend fun getCurrentUser(): User? {
+        val firebaseUser = FirebaseClient.auth.currentUser ?: return null
+        return User(
+            id = firebaseUser.uid,
+            email = firebaseUser.email ?: ""
+        )
     }
 }
-

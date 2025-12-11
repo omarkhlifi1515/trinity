@@ -13,7 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trinity.hrm.data.model.Message
-import com.trinity.hrm.data.remote.LocalAuth
 import com.trinity.hrm.data.storage.DataStorage
 import kotlinx.coroutines.launch
 
@@ -21,7 +20,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MessagesScreen() {
     val context = LocalContext.current
-    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
+    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.ApiClient.User?>(null) }
     val messages = remember { mutableStateOf<List<Message>>(emptyList()) }
     val employees = remember { mutableStateOf<List<com.trinity.hrm.data.model.Employee>>(emptyList()) }
     val showAddDialog = remember { mutableStateOf(false) }
@@ -34,10 +33,8 @@ fun MessagesScreen() {
     }
     
     LaunchedEffect(refreshTrigger.value) {
-        val localAuth = LocalAuth(context)
-        currentUser.value = localAuth.getCurrentUser()
-        
         coroutineScope.launch {
+            currentUser.value = com.trinity.hrm.data.remote.ApiClient.getCurrentUser()
             // Sync from cloud first, then load
             messages.value = DataStorage.getMessages()
             employees.value = DataStorage.getEmployees()

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { View, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
-import { getCurrentUser } from '@/lib/supabase'
+import { getCurrentUser } from '@/lib/auth'
 import { useAuthStore } from '@/store/authStore'
 
 export default function Index() {
@@ -16,7 +16,7 @@ export default function Index() {
   const checkUser = async () => {
     try {
       const currentUser = await getCurrentUser()
-      
+
       if (currentUser) {
         setUser(currentUser)
         router.replace('/(tabs)/dashboard')

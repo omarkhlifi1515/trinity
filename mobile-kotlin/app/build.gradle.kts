@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -66,15 +67,16 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Supabase Kotlin SDK
-    implementation(platform("io.github.jan-tennert.supabase:bom:2.3.0"))
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-    implementation("io.github.jan-tennert.supabase:realtime-kt")
-    implementation("io.github.jan-tennert.supabase:functions-kt")
-    implementation("io.ktor:ktor-client-android:${libs.versions.ktor.get()}")
-    implementation("io.ktor:ktor-client-core:${libs.versions.ktor.get()}")
+    // Firebase - Google's Backend as a Service
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
     
-    // HTTP Client (for local API - keeping for backward compatibility)
+    // Coroutines support for Firebase
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    
+    // HTTP Client (keeping for potential API calls)
     implementation(libs.ktor.client.android)
     implementation("io.ktor:ktor-client-content-negotiation:${libs.versions.ktor.get()}")
     implementation("io.ktor:ktor-serialization-kotlinx-json:${libs.versions.ktor.get()}")

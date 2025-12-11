@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { TextInput, Button, Text, Card } from 'react-native-paper'
 import { useRouter } from 'expo-router'
-import { signup } from '@/lib/supabase'
+import { signup } from '@/lib/auth'
 import { useAuthStore } from '@/store/authStore'
 import { Building2 } from 'lucide-react-native'
 

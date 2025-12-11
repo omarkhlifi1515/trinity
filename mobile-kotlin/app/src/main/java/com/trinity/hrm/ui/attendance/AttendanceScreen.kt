@@ -16,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.trinity.hrm.data.model.Attendance
-import com.trinity.hrm.data.remote.LocalAuth
 import com.trinity.hrm.data.storage.DataStorage
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -26,7 +25,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AttendanceScreen() {
     val context = LocalContext.current
-    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
+    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.ApiClient.User?>(null) }
     val attendanceList = remember { mutableStateOf<List<Attendance>>(emptyList()) }
     val showMarkDialog = remember { mutableStateOf(false) }
     val refreshTrigger = remember { mutableStateOf(0) }
@@ -38,10 +37,8 @@ fun AttendanceScreen() {
     }
     
     LaunchedEffect(refreshTrigger.value) {
-        val localAuth = LocalAuth(context)
-        currentUser.value = localAuth.getCurrentUser()
-        
         coroutineScope.launch {
+            currentUser.value = com.trinity.hrm.data.remote.ApiClient.getCurrentUser()
             attendanceList.value = DataStorage.getAttendance()
         }
     }

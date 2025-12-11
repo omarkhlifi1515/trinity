@@ -1,13 +1,16 @@
-/**
- * Local Authentication - Standalone Mobile App
- * Uses JSONBin.io for shared data storage with web and Kotlin apps
- * No web app connection needed!
- * 
- * Set EXPO_PUBLIC_JSONBIN_API_KEY in .env file:
- * EXPO_PUBLIC_JSONBIN_API_KEY=$2a$10$XtgiWhpdzGwCmy0M915kdu9zNMfZi41jHYYGbimNLgjSSBmpFdJKq
- */
+import 'react-native-url-polyfill/auto'
+import { createClient } from '@supabase/supabase-js'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
-// Re-export from auth.ts (local authentication)
-export * from './auth'
-export type { User } from './auth'
+// Using the values from README.md
+const supabaseUrl = 'https://nghwpwajcoofbgvsevgf.supabase.co'
+const supabaseAnonKey = 'sb_publishable_hahT_e8_6T-6qXE4boTyYQ_Q-w5rFzx'
 
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+})

@@ -1,13 +1,13 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  Calendar, 
-  Briefcase, 
-  MessageSquare, 
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  Calendar,
+  Briefcase,
+  MessageSquare,
   CalendarDays,
   LogOut,
   Menu,
@@ -24,7 +24,7 @@ interface User {
 }
 
 interface SidebarProps {
-  user: User
+  user: User | null
 }
 
 const allNavigation = [
@@ -40,27 +40,24 @@ const allNavigation = [
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+
+  if (!user) return null; // Prevent crash if user is missing during auth transition
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userRole, setUserRole] = useState<string>('employee')
 
   useEffect(() => {
-    // Get user role from server
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUserRole(getUserRole(data.user))
-        }
-      })
-      .catch(() => {
-        // Default to employee if can't fetch
-        setUserRole('employee')
-      })
-  }, [])
+    // Use role from user prop or default to employee
+    if (user?.role) {
+      setUserRole(user.role)
+    } else {
+      setUserRole('employee')
+    }
+  }, [user])
 
   const handleSignOut = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      const { FirebaseAuthClient } = await import('@/lib/firebase/auth')
+      await FirebaseAuthClient.logout()
       router.push('/')
       router.refresh()
     } catch (error) {
@@ -70,13 +67,13 @@ export default function Sidebar({ user }: SidebarProps) {
   }
 
   // Filter navigation based on user role
-  const navigation = allNavigation.filter(item => 
+  const navigation = allNavigation.filter(item =>
     item.roles.includes(userRole) || userRole === 'admin'
   )
 
-  const roleDisplay = userRole === 'admin' ? 'Admin' 
-    : userRole === 'department_head' ? 'Department Head' 
-    : 'Employee'
+  const roleDisplay = userRole === 'admin' ? 'Admin'
+    : userRole === 'department_head' ? 'Department Head'
+      : 'Employee'
 
   return (
     <>
@@ -121,8 +118,8 @@ export default function Sidebar({ user }: SidebarProps) {
                   href={item.href}
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
-                    ${isActive 
-                      ? 'bg-blue-50 text-blue-700' 
+                    ${isActive
+                      ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
@@ -140,12 +137,12 @@ export default function Sidebar({ user }: SidebarProps) {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">
-                  {user.email?.charAt(0).toUpperCase()}
+                  {user?.email?.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {user.email}
+                  {user?.email}
                 </p>
                 <p className="text-xs text-gray-500">{roleDisplay}</p>
               </div>

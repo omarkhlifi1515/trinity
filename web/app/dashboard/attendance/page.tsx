@@ -1,14 +1,7 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth/local-auth'
-import AttendanceContent from '@/components/attendance/AttendanceContent'
+﻿'use client';
 
-export default async function AttendancePage() {
-  const user = await getCurrentUser()
+import attendanceContent from '@/components/attendance/attendanceContent'
 
-  if (!user) {
-    redirect('/')
-  }
-
-  return <AttendanceContent />
+export default function attendancePage() {
+  return <attendanceContent />
 }
-

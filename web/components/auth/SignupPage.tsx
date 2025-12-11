@@ -39,39 +39,27 @@ export default function SignupPage() {
     }
 
     try {
-      console.log('Attempting signup for:', email)
-      
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      console.log('Attempting Firebase signup for:', email)
 
-      const data = await response.json()
+      const { FirebaseAuthClient } = await import('@/lib/firebase/auth')
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Signup failed')
-      }
+      const user = await FirebaseAuthClient.signup(email, password)
 
-      console.log('✅ Signup successful:', data.user?.email)
+      console.log('✅ Signup successful:', user.email)
       setSuccess(true)
-      
-      // Wait a moment for cookie to be set
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
+
       // Redirect to dashboard
       console.log('🔄 Redirecting to dashboard...')
       router.push('/dashboard')
       router.refresh()
     } catch (err: any) {
       console.error('Signup error:', err)
-      if (err.message?.includes('already exists') || err.message?.includes('already registered')) {
+      if (err.message?.includes('email-already-in-use') || err.message?.includes('already exists')) {
         setError('This email is already registered. Please sign in instead.')
       } else {
         setError(err.message || 'Failed to sign up. Please try again.')
       }
+    } finally {
       setLoading(false)
     }
   }

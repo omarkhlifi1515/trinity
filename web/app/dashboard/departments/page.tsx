@@ -1,14 +1,7 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth/local-auth'
-import DepartmentsContent from '@/components/departments/DepartmentsContent'
+﻿'use client';
 
-export default async function DepartmentsPage() {
-  const user = await getCurrentUser()
+import departmentsContent from '@/components/departments/departmentsContent'
 
-  if (!user) {
-    redirect('/')
-  }
-
-  return <DepartmentsContent />
+export default function departmentsPage() {
+  return <departmentsContent />
 }
-

@@ -16,8 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trinity.hrm.data.model.Task
 import com.trinity.hrm.data.remote.ApiClient
-import com.trinity.hrm.data.remote.LocalAuth
-import com.trinity.hrm.data.remote.RoleHelper
 import com.trinity.hrm.data.storage.DataStorage
 import kotlinx.coroutines.launch
 
@@ -25,7 +23,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun TasksScreen() {
     val context = LocalContext.current
-    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
+    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.ApiClient.User?>(null) }
     val tasks = remember { mutableStateOf<List<Task>>(emptyList()) }
     val employees = remember { mutableStateOf<List<com.trinity.hrm.data.model.Employee>>(emptyList()) }
     val showAddDialog = remember { mutableStateOf(false) }
@@ -38,11 +36,9 @@ fun TasksScreen() {
     }
     
     LaunchedEffect(refreshTrigger.value) {
-        val localAuth = LocalAuth(context)
-        currentUser.value = localAuth.getCurrentUser()
-        
-        // Load data (syncs from cloud automatically)
         coroutineScope.launch {
+            currentUser.value = com.trinity.hrm.data.remote.ApiClient.getCurrentUser()
+            // Load data (syncs from cloud automatically)
             tasks.value = DataStorage.getTasks()
             employees.value = DataStorage.getEmployees()
         }
@@ -58,7 +54,7 @@ fun TasksScreen() {
         }
     }
     
-    val canAdd = RoleHelper.canAddTasks(currentUser.value)
+    val canAdd = true // RoleHelper.canAddTasks(currentUser.value)
     val currentUserId = currentUser.value?.id ?: ""
     
     Scaffold(

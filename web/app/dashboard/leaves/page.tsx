@@ -1,14 +1,7 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth/local-auth'
-import LeavesContent from '@/components/leaves/LeavesContent'
+﻿'use client';
 
-export default async function LeavesPage() {
-  const user = await getCurrentUser()
+import leavesContent from '@/components/leaves/leavesContent'
 
-  if (!user) {
-    redirect('/')
-  }
-
-  return <LeavesContent />
+export default function leavesPage() {
+  return <leavesContent />
 }
-

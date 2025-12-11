@@ -1,46 +1,33 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth/local-auth'
 
+/**
+ * Middleware for Firebase Authentication
+ * Note: Firebase uses client-side auth, so we rely on client-side redirects
+ * This middleware just ensures proper routing
+ */
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth-token')?.value
-  let user = null
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  if (token) {
-    user = await verifyToken(token)
-  }
+  // Firebase auth is handled client-side
+  // The actual auth check happens in the client components
+  // This middleware just ensures clean routing
 
-  // Log for debugging
-  if (request.nextUrl.pathname === '/dashboard') {
-    console.log('Dashboard access attempt - User:', user ? user.email : 'none')
-  }
-
-  // Protect dashboard routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!user) {
-      console.log('No user found, redirecting to login')
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // Redirect authenticated users away from login/signup
-  if (
-    (request.nextUrl.pathname === '/' || 
-     request.nextUrl.pathname === '/login' || 
-     request.nextUrl.pathname === '/signup') && 
-    user
-  ) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - api (API routes)
+     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

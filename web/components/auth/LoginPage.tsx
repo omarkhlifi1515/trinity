@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, Mail, Lock, LogIn } from 'lucide-react'
-import { login } from '@/lib/auth/client-auth'
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -18,24 +18,25 @@ export default function LoginPage() {
     setError('')
 
     try {
-      console.log('Attempting login for:', email)
-      
-      const { user } = await login(email, password)
+      console.log('Attempting Firebase login for:', email)
+
+      const { FirebaseAuthClient } = await import('@/lib/firebase/auth')
+
+      const user = await FirebaseAuthClient.login(email, password)
+
       console.log('✅ Login successful! User:', user.email)
 
-      // Wait a bit for cookies to propagate
-      await new Promise(resolve => setTimeout(resolve, 800))
-
-      console.log('🔄 Redirecting to dashboard...')
+      // Redirect to dashboard
       router.push('/dashboard')
-      router.refresh() // Force a refresh to re-evaluate middleware
+      router.refresh()
     } catch (err: any) {
       console.error('❌ Login error:', err)
-      if (err.message?.includes('Invalid login credentials') || err.message?.includes('Invalid credentials')) {
+      if (err.message?.includes('invalid-credential') || err.message?.includes('user-not-found') || err.message?.includes('wrong-password')) {
         setError('Invalid email or password. Please try again or sign up.')
       } else {
         setError(err.message || 'Failed to sign in. Please check your credentials.')
       }
+    } finally {
       setLoading(false)
     }
   }

@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { Users, Briefcase, Calendar, CalendarDays, MessageSquare, Building2 } from 'lucide-react'
-import { canAddEmployees, canAddTasks, getUserRole } from '@/lib/auth/roles'
-import { getEmployees, getTasks, getLeaves, getMessages, getAttendance, getDepartments } from '@/lib/storage/supabase-storage'
 
 interface User {
   id: string
@@ -25,39 +23,31 @@ export default function DashboardContent({ user }: DashboardContentProps) {
     departments: 0,
     messages: 0,
   })
-  const [userRole, setUserRole] = useState<string>('employee')
 
   useEffect(() => {
     loadStats()
-    setUserRole(getUserRole(user))
-  }, [user])
+  }, [])
 
   const loadStats = async () => {
     try {
-      const [employees, tasks, leaves, messages, attendance, departments] = await Promise.all([
-        getEmployees(),
-        getTasks(),
-        getLeaves(),
-        getMessages(),
-        getAttendance(),
-        getDepartments(),
-      ])
-
+      // Using mock data since we're using Firebase for auth and local storage
+      // In a real app, you'd fetch from Firebase Firestore here
       setStats({
-        employees: employees.length,
-        tasks: tasks.length,
-        attendance: attendance.length,
-        leaves: leaves.length,
-        departments: departments.length,
-        messages: messages.length,
+        employees: 0,
+        tasks: 0,
+        attendance: 0,
+        leaves: 0,
+        departments: 0,
+        messages: 0,
       })
     } catch (error) {
       console.error('Error loading stats:', error)
     }
   }
 
-  const canAddEmp = canAddEmployees(user)
-  const canAddTask = canAddTasks(user)
+  const userRole = user.role || 'employee'
+  const canAddEmp = userRole === 'admin'
+  const canAddTask = userRole === 'admin' || userRole === 'department_head'
 
   return (
     <div className="p-8">

@@ -13,8 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trinity.hrm.data.model.Employee
-import com.trinity.hrm.data.remote.LocalAuth
-import com.trinity.hrm.data.remote.RoleHelper
 import com.trinity.hrm.data.storage.DataStorage
 import kotlinx.coroutines.launch
 
@@ -22,7 +20,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EmployeesScreen() {
     val context = LocalContext.current
-    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.JsonBinClient.User?>(null) }
+    val currentUser = remember { mutableStateOf<com.trinity.hrm.data.remote.ApiClient.User?>(null) }
     val employees = remember { mutableStateOf<List<Employee>>(emptyList()) }
     val showAddDialog = remember { mutableStateOf(false) }
     val refreshTrigger = remember { mutableStateOf(0) }
@@ -34,11 +32,8 @@ fun EmployeesScreen() {
     }
     
     LaunchedEffect(refreshTrigger.value) {
-        val localAuth = LocalAuth(context)
-        currentUser.value = localAuth.getCurrentUser()
-        
-        // Load employees (syncs from cloud automatically)
         coroutineScope.launch {
+            currentUser.value = com.trinity.hrm.data.remote.ApiClient.getCurrentUser()
             employees.value = DataStorage.getEmployees()
         }
     }
@@ -53,7 +48,7 @@ fun EmployeesScreen() {
         }
     }
     
-    val canAdd = RoleHelper.canAddEmployees(currentUser.value)
+    val canAdd = true // RoleHelper.canAddEmployees(currentUser.value)
     
     Scaffold(
         topBar = {

@@ -1,14 +1,7 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth/local-auth'
-import MessagesContent from '@/components/messages/MessagesContent'
+﻿'use client';
 
-export default async function MessagesPage() {
-  const user = await getCurrentUser()
+import messagesContent from '@/components/messages/messagesContent'
 
-  if (!user) {
-    redirect('/')
-  }
-
-  return <MessagesContent />
+export default function messagesPage() {
+  return <messagesContent />
 }
-
