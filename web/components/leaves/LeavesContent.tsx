@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { CalendarDays, Plus, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { getLeaves, Leave, getEmployees, Employee } from '@/lib/storage/supabase-storage'
-import { canAddTasks, getUserRole } from '@/lib/auth/roles'
+import { canApproveLeaves } from '@/lib/auth/roles'
+import { FirebaseAuthClient } from '@/lib/firebase/auth'
+import { getUserProfile } from '@/lib/firebase/users'
 
 export default function LeavesContent() {
   const [leaves, setLeaves] = useState<Leave[]>([])
@@ -22,13 +24,18 @@ export default function LeavesContent() {
 
   const loadUser = async () => {
     try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      if (data.user) {
-        setUser(data.user)
-        const role = getUserRole(data.user)
-        setCanApprove(role === 'admin' || role === 'department_head')
-        setCanRequest(true) // All users can request leaves
+      const firebaseUser = FirebaseAuthClient.getCurrentUser();
+      if (firebaseUser) {
+        const profile = await getUserProfile(firebaseUser.uid);
+        const userWithRole = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          role: profile?.role || 'employee',
+          department: profile?.department,
+        };
+        setUser(userWithRole);
+        setCanApprove(canApproveLeaves(userWithRole));
+        setCanRequest(true); // All users can request leaves
       }
     } catch (error) {
       console.error('Error loading user:', error)
@@ -75,8 +82,8 @@ export default function LeavesContent() {
     return employee?.name || employee?.email || 'Unknown'
   }
 
-  const filteredLeaves = filter === 'all' 
-    ? leaves 
+  const filteredLeaves = filter === 'all'
+    ? leaves
     : leaves.filter(leave => leave.status === filter)
 
   const getStatusIcon = (status: string) => {
@@ -116,11 +123,10 @@ export default function LeavesContent() {
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              filter === status
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === status
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
@@ -177,18 +183,18 @@ export default function LeavesContent() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLeaves.map((leave) => {
                 const days = Math.ceil(
-                  (new Date(leave.endDate).getTime() - new Date(leave.startDate).getTime()) / (1000 * 60 * 60 * 24)
+                  (new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)
                 ) + 1
                 return (
                   <tr key={leave.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{getEmployeeName(leave.employeeId)}</div>
+                      <div className="text-sm font-medium text-gray-900">{getEmployeeName(leave.employee_id)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                       {leave.type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                      {new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {days} days

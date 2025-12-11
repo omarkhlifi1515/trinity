@@ -9,10 +9,14 @@ import {
     UserCredential
 } from 'firebase/auth';
 import { auth } from './config';
+import { createUserProfile, getUserProfile, userProfileExists, UserProfile } from './users';
 
 export interface User {
     id: string;
     email: string;
+    role?: string;
+    department?: string;
+    displayName?: string;
 }
 
 /**
@@ -30,9 +34,19 @@ export const FirebaseAuthClient = {
             const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
 
+            // Get or create user profile
+            let profile = await getUserProfile(firebaseUser.uid);
+            if (!profile) {
+                // Create profile if it doesn't exist (for existing Firebase users)
+                profile = await createUserProfile(firebaseUser.uid, firebaseUser.email || email);
+            }
+
             return {
                 id: firebaseUser.uid,
-                email: firebaseUser.email || email
+                email: firebaseUser.email || email,
+                role: profile.role,
+                department: profile.department,
+                displayName: profile.displayName,
             };
         } catch (error: any) {
             throw new Error(`Login failed: ${error.message}`);
@@ -49,9 +63,15 @@ export const FirebaseAuthClient = {
             const userCredential: UserCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
 
+            // Create user profile in Firestore
+            const profile = await createUserProfile(firebaseUser.uid, firebaseUser.email || email);
+
             return {
                 id: firebaseUser.uid,
-                email: firebaseUser.email || email
+                email: firebaseUser.email || email,
+                role: profile.role,
+                department: profile.department,
+                displayName: profile.displayName,
             };
         } catch (error: any) {
             throw new Error(`Signup failed: ${error.message}`);
@@ -69,6 +89,26 @@ export const FirebaseAuthClient = {
         } catch (error: any) {
             console.error('Logout error:', error.message);
         }
+    },
+
+    /**
+     * Get current authenticated user with profile
+     */
+    async getCurrentUserWithProfile(): Promise<User | null> {
+        if (!auth) return null;
+        const firebaseUser = auth.currentUser;
+        if (!firebaseUser) return null;
+
+        const profile = await getUserProfile(firebaseUser.uid);
+        if (!profile) return null;
+
+        return {
+            id: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            role: profile.role,
+            department: profile.department,
+            displayName: profile.displayName,
+        };
     },
 
     /**

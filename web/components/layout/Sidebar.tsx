@@ -11,16 +11,19 @@ import {
   CalendarDays,
   LogOut,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { canAddEmployees, canAddTasks, getUserRole } from '@/lib/auth/roles'
+import { getUserProfile } from '@/lib/firebase/users'
+import { isAdmin, getRoleDisplayName } from '@/lib/auth/roles'
 
 interface User {
   id: string
   email: string
-  role?: 'admin' | 'department_head' | 'employee'
+  role?: string
   department?: string
+  displayName?: string
 }
 
 interface SidebarProps {
@@ -28,31 +31,44 @@ interface SidebarProps {
 }
 
 const allNavigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'department_head', 'employee'] },
-  { name: 'Employees', href: '/dashboard/employees', icon: Users, roles: ['admin'] },
-  { name: 'Departments', href: '/dashboard/departments', icon: Building2, roles: ['admin'] },
-  { name: 'Tasks', href: '/dashboard/tasks', icon: Briefcase, roles: ['admin', 'department_head', 'employee'] },
-  { name: 'Attendance', href: '/dashboard/attendance', icon: Calendar, roles: ['admin', 'department_head', 'employee'] },
-  { name: 'Leaves', href: '/dashboard/leaves', icon: CalendarDays, roles: ['admin', 'department_head', 'employee'] },
-  { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare, roles: ['admin', 'department_head', 'employee'] },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'chef', 'employee'] },
+  { name: 'Employees', href: '/dashboard/employees', icon: Users, roles: ['admin', 'chef'] },
+  { name: 'Departments', href: '/dashboard/departments', icon: Building2, roles: ['admin', 'chef'] },
+  { name: 'Tasks', href: '/dashboard/tasks', icon: Briefcase, roles: ['admin', 'chef', 'employee'] },
+  { name: 'Attendance', href: '/dashboard/attendance', icon: Calendar, roles: ['admin', 'chef', 'employee'] },
+  { name: 'Leaves', href: '/dashboard/leaves', icon: CalendarDays, roles: ['admin', 'chef', 'employee'] },
+  { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare, roles: ['admin', 'chef', 'employee'] },
+  { name: 'Admin', href: '/dashboard/admin', icon: Shield, roles: ['admin'] },
 ]
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-
-  if (!user) return null; // Prevent crash if user is missing during auth transition
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [userRole, setUserRole] = useState<string>('employee')
+  const [user, setUser] = useState<User | null>(initialUser)
 
   useEffect(() => {
-    // Use role from user prop or default to employee
-    if (user?.role) {
-      setUserRole(user.role)
-    } else {
-      setUserRole('employee')
-    }
-  }, [user])
+    // Fetch full user profile with role
+    const loadUserProfile = async () => {
+      if (initialUser?.id) {
+        const profile = await getUserProfile(initialUser.id);
+        if (profile) {
+          setUser({
+            id: initialUser.id,
+            email: initialUser.email,
+            role: profile.role,
+            department: profile.department,
+            displayName: profile.displayName,
+          });
+        } else {
+          setUser(initialUser);
+        }
+      }
+    };
+    loadUserProfile();
+  }, [initialUser]);
+
+  if (!user) return null;
 
   const handleSignOut = async () => {
     try {
@@ -67,13 +83,12 @@ export default function Sidebar({ user }: SidebarProps) {
   }
 
   // Filter navigation based on user role
+  const userRole = user.role || 'employee';
   const navigation = allNavigation.filter(item =>
-    item.roles.includes(userRole) || userRole === 'admin'
+    item.roles.includes(userRole) || isAdmin(user)
   )
 
-  const roleDisplay = userRole === 'admin' ? 'Admin'
-    : userRole === 'department_head' ? 'Department Head'
-      : 'Employee'
+  const roleDisplay = getRoleDisplayName(userRole);
 
   return (
     <>

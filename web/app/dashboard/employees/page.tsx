@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import employeesContent from '@/components/employees/employeesContent'
+import EmployeesContent from '@/components/employees/EmployeesContent'
 
-export default function employeesPage() {
-  return <employeesContent />
+export default function EmployeesPage() {
+  return <EmployeesContent />
 }
+

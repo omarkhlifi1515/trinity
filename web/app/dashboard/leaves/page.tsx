@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import leavesContent from '@/components/leaves/leavesContent'
+import LeavesContent from '@/components/leaves/LeavesContent'
 
-export default function leavesPage() {
-  return <leavesContent />
+export default function LeavesPage() {
+  return <LeavesContent />
 }
+
