@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Safely check role without crashing if profile doesn't exist
+    function getUserRole() {
+       return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? 
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : 'employee';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isChef() {
+      return isAuthenticated() && getUserRole() == 'chef';
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isChef());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      // Must include 'where' clause in queries to match these rules
+      allow read: if isAdmin() || isChef() || 
+                  (isAuthenticated() && (resource.data.assignedTo == request.auth.uid || resource.data.assignedBy == request.auth.uid));
+      allow create: if isAdmin() || isChef(); // Only Admins/Chefs create tasks
+      allow update: if isAdmin() || isChef() || 
+                    (isAuthenticated() && resource.data.assignedTo == request.auth.uid);
+      allow delete: if isAdmin() || isChef();
+    }
+
+    // Leaves
+    match /leaves/{leaveId} {
+      allow read: if isAdmin() || isChef() || 
+                  (isAuthenticated() && resource.data.employeeId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.employeeId == request.auth.uid;
+      allow update: if isAdmin() || isChef() ||
+                    (isAuthenticated() && resource.data.employeeId == request.auth.uid && resource.data.status == 'pending');
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.employeeId == request.auth.uid && resource.data.status == 'pending');
+    }
+
+    // Messages
+    match /messages/{messageId} {
+        // Query must be: where('receiverId', 'in', [uid, 'all']) OR where('senderId', '==', uid)
+        allow read: if isAuthenticated() && (
+            resource.data.receiverId == 'all' || 
+            resource.data.receiverId == request.auth.uid || 
+            resource.data.senderId == request.auth.uid
+        );
+        allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+        allow update: if isAuthenticated() && (
+            resource.data.receiverId == request.auth.uid || resource.data.senderId == request.auth.uid
+        );
+    }
+
+    // Attendance
+    match /attendance/{recordId} {
+        allow read: if isAuthenticated() && (resource.data.employeeId == request.auth.uid || isAdmin() || isChef());
+        allow create: if isAuthenticated() && request.resource.data.employeeId == request.auth.uid;
+        allow update: if isAuthenticated() && resource.data.employeeId == request.auth.uid;
+        allow delete: if isAdmin();
+    }
+
+    // Departments
+    match /departments/{deptId} {
+        allow read: if isAuthenticated(); // All auth users can see departments
+        allow write: if isAdmin();
+    }
+  }
+}

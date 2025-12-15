@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { MessageSquare, Plus, Mail, MailOpen } from 'lucide-react'
 import Link from 'next/link'
-import { getMessages, addMessage, Message, subscribeToMessages, markMessageAsRead } from '@/lib/storage/supabase-storage'
-import { getCurrentUser } from '@/lib/auth/local-auth'
+import { FirebaseAuthClient } from '@/lib/firebase/auth'
+import { Message, subscribeToMessages, markMessageAsRead } from '@/lib/firebase/messages'
 
 export default function MessagesContent() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -12,53 +12,48 @@ export default function MessagesContent() {
   const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
-    loadUser()
-    loadMessages()
-    
-    // Set up real-time subscription
-    const channel = subscribeToMessages((newMessage) => {
-      // Add new message to the list
-      setMessages(prev => [newMessage, ...prev])
-    })
+    let unsubscribe: () => void;
 
-    // Cleanup subscription on unmount
+    const setup = async () => {
+      try {
+        const user = FirebaseAuthClient.getCurrentUser();
+        if (user) {
+          init(user.uid);
+        } else {
+          FirebaseAuthClient.onAuthStateChanged((u) => {
+            if (u) init(u.uid);
+          });
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    const init = (uid: string) => {
+      setCurrentUserId(uid);
+      setLoading(true);
+      // Subscribe to real-time updates
+      unsubscribe = subscribeToMessages(uid, (msgs) => {
+        setMessages(msgs);
+        setLoading(false);
+      });
+    }
+
+    setup();
+
     return () => {
-      channel.unsubscribe()
+      // Only unsubscribe if it was assigned
+      if (unsubscribe) unsubscribe();
     }
   }, [])
 
-  const loadUser = async () => {
-    try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      if (data.user) {
-        setCurrentUserId(data.user.id)
-      }
-    } catch (error) {
-      console.error('Error loading user:', error)
-    }
-  }
-
-  const loadMessages = async () => {
-    try {
-      setLoading(true)
-      const data = await getMessages(currentUserId)
-      setMessages(data)
-    } catch (error) {
-      console.error('Error loading messages:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleMarkAsRead = async (messageId: string) => {
-    await markMessageAsRead(messageId)
-    setMessages(prev => prev.map(msg => 
-      msg.id === messageId ? { ...msg, read: true } : msg
-    ))
+    try {
+      await markMessageAsRead(messageId)
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  const unreadCount = messages.filter(m => !m.read && m.to_user === currentUserId).length
+  const unreadCount = messages.filter(m => !m.read && (m.receiverId === currentUserId || m.receiverId === 'all') && m.senderId !== currentUserId).length
 
   return (
     <div className="p-8">
@@ -99,13 +94,12 @@ export default function MessagesContent() {
       ) : (
         <div className="space-y-4">
           {messages.map((message) => {
-            const isUnread = !message.read && message.to_user === currentUserId
+            const isUnread = !message.read && (message.receiverId === currentUserId || message.receiverId === 'all') && message.senderId !== currentUserId
             return (
               <div
                 key={message.id}
-                className={`bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer ${
-                  isUnread ? 'border-l-4 border-blue-600' : ''
-                }`}
+                className={`bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer ${isUnread ? 'border-l-4 border-blue-600' : ''
+                  }`}
                 onClick={() => isUnread && handleMarkAsRead(message.id)}
               >
                 <div className="flex items-start justify-between mb-2">
@@ -118,8 +112,9 @@ export default function MessagesContent() {
                     <div>
                       <h3 className="font-semibold text-gray-900">{message.subject}</h3>
                       <p className="text-sm text-gray-500">
-                        {message.from_user === currentUserId ? 'To: ' : 'From: '}
-                        {message.to_user || 'All'}
+                        {message.senderId === currentUserId ? 'To: ' : 'From: '}
+                        {/* We display email or name if available. For now just generic or stored info */}
+                        {message.senderEmail || message.senderName || 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -131,7 +126,7 @@ export default function MessagesContent() {
                 </div>
                 <p className="text-sm text-gray-600 mb-2 line-clamp-2">{message.content}</p>
                 <p className="text-xs text-gray-400">
-                  {new Date(message.created_at).toLocaleString()}
+                  {message.createdAt ? new Date(message.createdAt).toLocaleString() : ''}
                 </p>
               </div>
             )

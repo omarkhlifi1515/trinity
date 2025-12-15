@@ -1,35 +1,62 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Calendar, CheckCircle2, XCircle, Clock } from 'lucide-react'
-
-interface Attendance {
-  id: string
-  employee_name: string
-  date: string
-  check_in: string
-  check_out: string | null
-  status: 'present' | 'absent' | 'late'
-}
+import { Calendar, CheckCircle2, XCircle, Clock, LogOut } from 'lucide-react'
+import { getAttendanceByDate, checkIn, checkOut, AttendanceRecord } from '@/lib/firebase/attendance'
+import { FirebaseAuthClient } from '@/lib/firebase/auth'
+import { getUserProfile } from '@/lib/firebase/users'
 
 export default function AttendanceContent() {
-  const [attendance, setAttendance] = useState<Attendance[]>([])
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [user, setUser] = useState<any>(null);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   useEffect(() => {
     loadAttendance()
   }, [selectedDate])
 
+  const loadUser = async () => {
+    try {
+      const u = FirebaseAuthClient.getCurrentUser();
+      if (u) {
+        const profile = await getUserProfile(u.uid);
+        setUser({ ...u, ...profile });
+        checkTodayStatus(u.uid);
+      } else {
+        FirebaseAuthClient.onAuthStateChanged(async (user) => {
+          if (user) {
+            const profile = await getUserProfile(user.uid);
+            setUser({ ...user, ...profile });
+            checkTodayStatus(user.uid);
+          }
+        });
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  const checkTodayStatus = async (uid: string) => {
+    // Check if user has a record for today to toggle button state
+    const today = new Date().toISOString().split('T')[0];
+    const records = await getAttendanceByDate(today);
+    const myRecord = records.find(r => r.employeeId === uid);
+    if (myRecord && !myRecord.checkOut) {
+      setIsCheckedIn(true);
+    } else {
+      setIsCheckedIn(false);
+    }
+  }
+
   const loadAttendance = async () => {
     try {
       setLoading(true)
-      // Load attendance from Supabase
-      // Example: const { data } = await supabase.from('attendance').select('*').eq('date', selectedDate)
-      // setAttendance(data || [])
-      
-      // Placeholder data
-      setAttendance([])
+      const data = await getAttendanceByDate(selectedDate)
+      setAttendance(data)
     } catch (error) {
       console.error('Error loading attendance:', error)
     } finally {
@@ -37,15 +64,22 @@ export default function AttendanceContent() {
     }
   }
 
-  const handleMarkAttendance = async () => {
+  const handleAttendanceAction = async () => {
+    if (!user) return;
     try {
-      // Mark attendance logic
-      // Example: await supabase.from('attendance').insert({ ... })
-      alert('Attendance marked successfully!')
-      loadAttendance()
-    } catch (error) {
+      if (isCheckedIn) {
+        await checkOut(user.uid);
+        alert('Checked out successfully!');
+        setIsCheckedIn(false); // Can check in again? Usually one shift per day logic, but simple toggle for now.
+      } else {
+        await checkIn(user.uid, user.displayName || user.email);
+        alert('Checked in successfully!');
+        setIsCheckedIn(true);
+      }
+      loadAttendance();
+    } catch (error: any) {
       console.error('Error marking attendance:', error)
-      alert('Failed to mark attendance')
+      alert(error.message || 'Failed to mark attendance')
     }
   }
 
@@ -70,11 +104,12 @@ export default function AttendanceContent() {
           <p className="text-gray-600">Track employee attendance</p>
         </div>
         <button
-          onClick={handleMarkAttendance}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          onClick={handleAttendanceAction}
+          className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors ${isCheckedIn ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+            }`}
         >
-          <CheckCircle2 className="w-5 h-5" />
-          Mark Attendance
+          {isCheckedIn ? <LogOut className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+          {isCheckedIn ? 'Check Out' : 'Check In'}
         </button>
       </div>
 
@@ -100,14 +135,7 @@ export default function AttendanceContent() {
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Attendance Records</h3>
-          <p className="text-gray-600 mb-6">Mark attendance to get started</p>
-          <button
-            onClick={handleMarkAttendance}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <CheckCircle2 className="w-5 h-5" />
-            Mark Attendance
-          </button>
+          <p className="text-gray-600 mb-6">No records found for this date.</p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -132,7 +160,7 @@ export default function AttendanceContent() {
               {attendance.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{record.employee_name}</div>
+                    <div className="text-sm font-medium text-gray-900">{record.employeeName || 'Unknown'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -141,10 +169,10 @@ export default function AttendanceContent() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {record.check_in || '-'}
+                    {record.checkIn || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {record.check_out || '-'}
+                    {record.checkOut || '-'}
                   </td>
                 </tr>
               ))}
@@ -155,4 +183,3 @@ export default function AttendanceContent() {
     </div>
   )
 }
-

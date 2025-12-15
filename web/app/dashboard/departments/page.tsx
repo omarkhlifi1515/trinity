@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import departmentsContent from '@/components/departments/departmentsContent'
+import DepartmentsContent from '@/components/departments/DepartmentsContent'
 
-export default function departmentsPage() {
-  return <departmentsContent />
+export default function DepartmentsPage() {
+  return <DepartmentsContent />
 }

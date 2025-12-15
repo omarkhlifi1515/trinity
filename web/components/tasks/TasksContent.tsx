@@ -3,38 +3,58 @@
 import { useEffect, useState } from 'react'
 import { Briefcase, Plus, CheckCircle2, Circle, Clock } from 'lucide-react'
 import Link from 'next/link'
-import { canAddTasks } from '@/lib/auth/roles'
-import { getTasks, Task } from '@/lib/storage/supabase-storage'
+import { Task, getAllTasks, getUserTasks, updateTask } from '@/lib/firebase/tasks'
+import { FirebaseAuthClient } from '@/lib/firebase/auth'
+import { getUserProfile } from '@/lib/firebase/users'
 
 export default function TasksContent() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all')
   const [user, setUser] = useState<any>(null)
   const [canAdd, setCanAdd] = useState(false)
 
   useEffect(() => {
     loadUser()
-    loadTasks()
   }, [])
 
   const loadUser = async () => {
     try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      if (data.user) {
-        setUser(data.user)
-        setCanAdd(canAddTasks(data.user))
+      const firebaseUser = FirebaseAuthClient.getCurrentUser();
+      if (firebaseUser) {
+        setupUser(firebaseUser);
+      } else {
+        FirebaseAuthClient.onAuthStateChanged((user) => {
+          if (user) setupUser(user);
+        });
       }
     } catch (error) {
       console.error('Error loading user:', error)
     }
   }
 
-  const loadTasks = async () => {
+  const setupUser = async (firebaseUser: any) => {
+    const profile = await getUserProfile(firebaseUser.uid);
+    const userWithRole = {
+      id: firebaseUser.uid,
+      email: firebaseUser.email!,
+      role: profile?.role || 'employee',
+    };
+    setUser(userWithRole);
+    setCanAdd(userWithRole.role === 'admin' || userWithRole.role === 'chef');
+    loadTasks(userWithRole);
+  }
+
+  const loadTasks = async (currentUser: any) => {
     try {
       setLoading(true)
-      const data = await getTasks()
+      let data: Task[] = [];
+      if (currentUser.role === 'admin' || currentUser.role === 'chef') {
+        // Admin sees all, Chef sees all (simplified) or implementation could filter by chef's created
+        data = await getAllTasks();
+      } else {
+        data = await getUserTasks(currentUser.id);
+      }
       setTasks(data)
     } catch (error) {
       console.error('Error loading tasks:', error)
@@ -43,20 +63,15 @@ export default function TasksContent() {
     }
   }
 
-  const filteredTasks = filter === 'all' 
-    ? tasks 
-    : tasks.filter(task => {
-        if (filter === 'completed') return task.status === 'completed'
-        if (filter === 'in_progress') return task.status === 'in_progress'
-        if (filter === 'pending') return task.status === 'pending'
-        return true
-      })
+  const filteredTasks = filter === 'all'
+    ? tasks
+    : tasks.filter(task => task.status === filter)
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
         return <CheckCircle2 className="w-5 h-5 text-green-600" />
-      case 'in_progress':
+      case 'in-progress':
         return <Clock className="w-5 h-5 text-blue-600" />
       default:
         return <Circle className="w-5 h-5 text-gray-400" />
@@ -94,17 +109,16 @@ export default function TasksContent() {
 
       {/* Filter Tabs */}
       <div className="mb-6 flex gap-2 border-b border-gray-200">
-        {(['all', 'pending', 'in_progress', 'completed'] as const).map((status) => (
+        {(['all', 'pending', 'in-progress', 'completed'] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              filter === status
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === status
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+            {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
           </button>
         ))}
       </div>
@@ -160,4 +174,3 @@ export default function TasksContent() {
     </div>
   )
 }
-

@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react'
 import { Building2, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
+import { getAllDepartments, Department } from '@/lib/firebase/departments'
+import { getUsersByDepartment } from '@/lib/firebase/users'
 
-interface Department {
-  id: string
-  name: string
-  description: string
-  employee_count: number
+// Extended interface for UI
+interface DepartmentWithCount extends Department {
+  employeeCount: number;
 }
 
 export default function DepartmentsContent() {
-  const [departments, setDepartments] = useState<Department[]>([])
+  const [departments, setDepartments] = useState<DepartmentWithCount[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,12 +22,17 @@ export default function DepartmentsContent() {
   const loadDepartments = async () => {
     try {
       setLoading(true)
-      // Load departments from Supabase
-      // Example: const { data } = await supabase.from('departments').select('*')
-      // setDepartments(data || [])
-      
-      // Placeholder data
-      setDepartments([])
+      const data = await getAllDepartments()
+
+      const deptsWithCounts = await Promise.all(data.map(async (dept) => {
+        const employees = await getUsersByDepartment(dept.name);
+        return {
+          ...dept,
+          employeeCount: employees.length
+        };
+      }));
+
+      setDepartments(deptsWithCounts)
     } catch (error) {
       console.error('Error loading departments:', error)
     } finally {
@@ -82,7 +87,7 @@ export default function DepartmentsContent() {
               <p className="text-sm text-gray-600 mb-4">{dept.description}</p>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Users className="w-4 h-4" />
-                <span>{dept.employee_count} employees</span>
+                <span>{dept.employeeCount} employees</span>
               </div>
             </div>
           ))}
@@ -91,4 +96,3 @@ export default function DepartmentsContent() {
     </div>
   )
 }
-

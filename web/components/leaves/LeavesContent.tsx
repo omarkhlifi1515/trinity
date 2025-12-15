@@ -3,14 +3,12 @@
 import { useEffect, useState } from 'react'
 import { CalendarDays, Plus, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
-import { getLeaves, Leave, getEmployees, Employee } from '@/lib/storage/supabase-storage'
-import { canApproveLeaves } from '@/lib/auth/roles'
 import { FirebaseAuthClient } from '@/lib/firebase/auth'
 import { getUserProfile } from '@/lib/firebase/users'
+import { getAllLeaves, getUserLeaves, Leave, updateLeaveStatus } from '@/lib/firebase/leaves'
 
 export default function LeavesContent() {
   const [leaves, setLeaves] = useState<Leave[]>([])
-  const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [user, setUser] = useState<any>(null)
@@ -19,38 +17,53 @@ export default function LeavesContent() {
 
   useEffect(() => {
     loadUser()
-    loadData()
   }, [])
 
   const loadUser = async () => {
     try {
       const firebaseUser = FirebaseAuthClient.getCurrentUser();
+      // If not logged in yet, wait for auth state change?
+      // Actually best practice is to assume auth guard wraps this page or rely on onAuthStateChanged
+      // For simplicity, we trigger reload if we get user
       if (firebaseUser) {
-        const profile = await getUserProfile(firebaseUser.uid);
-        const userWithRole = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email!,
-          role: profile?.role || 'employee',
-          department: profile?.department,
-        };
-        setUser(userWithRole);
-        setCanApprove(canApproveLeaves(userWithRole));
-        setCanRequest(true); // All users can request leaves
+        setupUser(firebaseUser);
+      } else {
+        FirebaseAuthClient.onAuthStateChanged((user) => {
+          if (user) setupUser(user);
+        });
       }
-    } catch (error) {
-      console.error('Error loading user:', error)
+    } catch (e) {
+      console.error(e);
     }
   }
 
-  const loadData = async () => {
+  const setupUser = async (firebaseUser: any) => {
+    const profile = await getUserProfile(firebaseUser.uid);
+    const userWithRole = {
+      id: firebaseUser.uid,
+      email: firebaseUser.email!,
+      role: profile?.role || 'employee',
+      department: profile?.department,
+    };
+    setUser(userWithRole);
+    setCanApprove(userWithRole.role === 'admin' || userWithRole.role === 'chef');
+
+    loadData(userWithRole);
+  }
+
+  const loadData = async (currentUser: any) => {
     try {
       setLoading(true)
-      const [leavesData, employeesData] = await Promise.all([
-        getLeaves(),
-        getEmployees(),
-      ])
+      let leavesData: Leave[] = [];
+
+      if (currentUser.role === 'employee') {
+        leavesData = await getUserLeaves(currentUser.id);
+      } else {
+        // Admin or Chef sees all (or filter by dept for chef later)
+        leavesData = await getAllLeaves();
+      }
+
       setLeaves(leavesData)
-      setEmployees(employeesData)
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
@@ -58,28 +71,16 @@ export default function LeavesContent() {
     }
   }
 
-  const handleApprove = async (leaveId: string, action: 'approve' | 'reject') => {
+  const handleApprove = async (leaveId: string, action: 'approved' | 'rejected') => {
+    if (!user) return;
     try {
-      const res = await fetch(`/api/leaves/${leaveId}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      })
-
-      if (res.ok) {
-        await loadData() // Reload leaves
-      } else {
-        alert('Failed to update leave status')
-      }
+      await updateLeaveStatus(leaveId, action, user.id);
+      // Reload data
+      loadData(user);
     } catch (error) {
       console.error('Error approving leave:', error)
       alert('Error updating leave status')
     }
-  }
-
-  const getEmployeeName = (employeeId: string) => {
-    const employee = employees.find(e => e.id === employeeId)
-    return employee?.name || employee?.email || 'Unknown'
   }
 
   const filteredLeaves = filter === 'all'
@@ -161,16 +162,13 @@ export default function LeavesContent() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Dates
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Days
+                  Reason
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -183,21 +181,19 @@ export default function LeavesContent() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLeaves.map((leave) => {
                 const days = Math.ceil(
-                  (new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)
+                  (new Date(leave.endDate).getTime() - new Date(leave.startDate).getTime()) / (1000 * 60 * 60 * 24)
                 ) + 1
                 return (
                   <tr key={leave.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{getEmployeeName(leave.employee_id)}</div>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                       {leave.type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}
+                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                      <div className="text-xs text-gray-400">({days} days)</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {days} days
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {leave.reason}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -210,24 +206,22 @@ export default function LeavesContent() {
                         {canApprove && leave.status === 'pending' && (
                           <>
                             <button
-                              onClick={() => handleApprove(leave.id, 'approve')}
+                              onClick={() => handleApprove(leave.id, 'approved')}
                               className="text-green-600 hover:text-green-900 font-medium"
                             >
                               Approve
                             </button>
                             <span className="text-gray-300">|</span>
                             <button
-                              onClick={() => handleApprove(leave.id, 'reject')}
+                              onClick={() => handleApprove(leave.id, 'rejected')}
                               className="text-red-600 hover:text-red-900 font-medium"
                             >
                               Reject
                             </button>
                           </>
                         )}
-                        {!canApprove && (
-                          <a href={`/dashboard/leaves/${leave.id}`} className="text-blue-600 hover:text-blue-900">
-                            View
-                          </a>
+                        {!canApprove && leave.status === 'pending' && (
+                          <span className="text-gray-400">Pending Review</span>
                         )}
                       </div>
                     </td>
@@ -241,4 +235,3 @@ export default function LeavesContent() {
     </div>
   )
 }
-

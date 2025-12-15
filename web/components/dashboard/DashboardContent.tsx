@@ -6,8 +6,9 @@ import { Users, Briefcase, Calendar, CalendarDays, MessageSquare, Building2 } fr
 interface User {
   id: string
   email: string
-  role?: 'admin' | 'department_head' | 'employee'
+  role?: 'admin' | 'chef' | 'employee'
   department?: string
+  displayName?: string
 }
 
 interface DashboardContentProps {
@@ -23,61 +24,121 @@ export default function DashboardContent({ user }: DashboardContentProps) {
     departments: 0,
     messages: 0,
   })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadStats()
-  }, [])
+  }, [user])
 
   const loadStats = async () => {
     try {
-      // Using mock data since we're using Firebase for auth and local storage
-      // In a real app, you'd fetch from Firebase Firestore here
+      const { getAllUsers, getUsersByDepartment } = await import('@/lib/firebase/users')
+      const { getAllTasks, getUserTasks, getCreatedTasks } = await import('@/lib/firebase/tasks')
+      const { getAllLeaves, getUserLeaves } = await import('@/lib/firebase/leaves')
+
+      let employeesCount = 0
+      let tasksCount = 0
+      let leavesCount = 0
+      // Mock other stats for now 
+      let departmentsCount = 0
+      let attendanceCount = 0
+      let messagesCount = 0
+
+      if (user.role === 'admin') {
+        const [users, tasks, leaves] = await Promise.all([
+          getAllUsers(),
+          getAllTasks(),
+          getAllLeaves()
+        ])
+        employeesCount = users.length
+        tasksCount = tasks.length
+        leavesCount = leaves.filter(l => l.status === 'pending').length
+      } else if (user.role === 'chef') {
+        if (user.department) {
+          const users = await getUsersByDepartment(user.department)
+          employeesCount = users.length
+        }
+        const [tasks, leaves] = await Promise.all([
+          getCreatedTasks(user.id),
+          getAllLeaves()
+        ])
+        // For Chef, assume they see tasks they created. 
+        // Also they might have tasks assigned TO them.
+        const assignedTasks = await getUserTasks(user.id);
+        const uniqueTaskIds = new Set([...tasks.map(t => t.id), ...assignedTasks.map(t => t.id)])
+        tasksCount = uniqueTaskIds.size
+
+        // Leaves: simplistic view - all pending leaves count
+        leavesCount = leaves.filter(l => l.status === 'pending').length
+      } else {
+        // Employee
+        const [tasks, leaves] = await Promise.all([
+          getUserTasks(user.id),
+          getUserLeaves(user.id)
+        ])
+        tasksCount = tasks.filter(t => t.status !== 'completed').length
+        leavesCount = leaves.length
+      }
+
       setStats({
-        employees: 0,
-        tasks: 0,
-        attendance: 0,
-        leaves: 0,
-        departments: 0,
-        messages: 0,
+        employees: employeesCount,
+        tasks: tasksCount,
+        attendance: attendanceCount,
+        leaves: leavesCount,
+        departments: departmentsCount,
+        messages: messagesCount,
       })
     } catch (error) {
       console.error('Error loading stats:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
   const userRole = user.role || 'employee'
   const canAddEmp = userRole === 'admin'
-  const canAddTask = userRole === 'admin' || userRole === 'department_head'
+  const canAddTask = userRole === 'admin' || userRole === 'chef'
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Welcome back, {user.email?.split('@')[0]}!</p>
+        <p className="text-gray-600">Welcome back, {user.displayName || user.email?.split('@')[0]}!</p>
+        {user.department && <span className="inline-block px-2 py-1 bg-gray-100 rounded text-xs text-gray-500 mt-1 uppercase tracking-wide">{user.department}</span>}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {canAddEmp && (
-          <>
-            <StatCard
-              title="Employees"
-              value={stats.employees}
-              icon={Users}
-              color="blue"
-              href="/dashboard/employees"
-            />
-            <StatCard
-              title="Departments"
-              value={stats.departments}
-              icon={Building2}
-              color="purple"
-              href="/dashboard/departments"
-            />
-          </>
+        {(canAddEmp || userRole === 'chef') && (
+          <StatCard
+            title={canAddEmp ? "Employees" : "Team Members"}
+            value={stats.employees}
+            icon={Users}
+            color="blue"
+            href="/dashboard/employees"
+          />
         )}
+
+        {canAddEmp && (
+          <StatCard
+            title="Departments"
+            value={stats.departments}
+            icon={Building2}
+            color="purple"
+            href="/dashboard/departments"
+          />
+        )}
+
         <StatCard
-          title="Tasks"
+          title={userRole === 'employee' ? "My Tasks" : "Tasks"}
           value={stats.tasks}
           icon={Briefcase}
           color="green"
@@ -91,7 +152,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
           href="/dashboard/attendance"
         />
         <StatCard
-          title="Leaves"
+          title={userRole === 'employee' ? "My Leaves" : "Pending Leaves"}
           value={stats.leaves}
           icon={CalendarDays}
           color="pink"
@@ -192,4 +253,3 @@ function StatCard({ title, value, icon: Icon, color, href }: {
 
   return content
 }
-

@@ -35,7 +35,7 @@ export async function createUserProfile(
 ): Promise<UserProfile> {
     if (!db) throw new Error('Firestore not initialized');
 
-    // Determine role based on email
+    // Determine role based on email - simple logic for now
     const role: UserRole = email.toLowerCase() === 'admin@gmail.com' ? 'admin' : 'employee';
 
     const userProfile: UserProfile = {
@@ -135,6 +135,30 @@ export async function getUsersByRole(role: UserRole): Promise<UserProfile[]> {
 
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('role', '==', role));
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            uid: data.uid,
+            email: data.email,
+            role: data.role,
+            department: data.department,
+            displayName: data.displayName,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate(),
+        };
+    });
+}
+
+/**
+ * Get users by department
+ */
+export async function getUsersByDepartment(department: string): Promise<UserProfile[]> {
+    if (!db) throw new Error('Firestore not initialized');
+
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('department', '==', department));
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map(doc => {

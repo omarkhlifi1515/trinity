@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { Users, Plus, Search } from 'lucide-react'
 import Link from 'next/link'
-import { canAddEmployees } from '@/lib/auth/roles'
-import { getEmployees, addEmployee, Employee } from '@/lib/storage/supabase-storage'
+import { FirebaseAuthClient } from '@/lib/firebase/auth'
+import { getAllUsers, UserProfile } from '@/lib/firebase/users'
 
 export default function EmployeesContent() {
-  const [employees, setEmployees] = useState<Employee[]>([])
+  const [employees, setEmployees] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [user, setUser] = useState<any>(null)
@@ -15,26 +15,38 @@ export default function EmployeesContent() {
 
   useEffect(() => {
     loadUser()
-    loadEmployees()
   }, [])
 
   const loadUser = async () => {
     try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      if (data.user) {
-        setUser(data.user)
-        setCanAdd(canAddEmployees(data.user))
+      const firebaseUser = FirebaseAuthClient.getCurrentUser();
+      if (firebaseUser) {
+        setupUser(firebaseUser);
+      } else {
+        FirebaseAuthClient.onAuthStateChanged((user) => {
+          if (user) setupUser(user);
+        });
       }
-    } catch (error) {
-      console.error('Error loading user:', error)
+    } catch (e) {
+      console.error(e)
     }
+  }
+
+  const setupUser = async (firebaseUser: any) => {
+    const { getUserProfile } = await import('@/lib/firebase/users');
+    const profile = await getUserProfile(firebaseUser.uid);
+
+    setUser(profile);
+    const role = profile?.role || 'employee';
+    setCanAdd(role === 'admin');
+
+    loadEmployees();
   }
 
   const loadEmployees = async () => {
     try {
       setLoading(true)
-      const data = await getEmployees()
+      const data = await getAllUsers()
       setEmployees(data)
     } catch (error) {
       console.error('Error loading employees:', error)
@@ -44,8 +56,7 @@ export default function EmployeesContent() {
   }
 
   const filteredEmployees = employees.filter(emp =>
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (emp.displayName || emp.email).toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -118,7 +129,7 @@ export default function EmployeesContent() {
                   Department
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Position
+                  Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -127,15 +138,15 @@ export default function EmployeesContent() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredEmployees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50">
+                <tr key={employee.uid} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                         <span className="text-blue-600 font-semibold">
-                          {employee.name.charAt(0).toUpperCase()}
+                          {(employee.displayName || employee.email).charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                      <div className="text-sm font-medium text-gray-900">{employee.displayName || 'N/A'}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -144,13 +155,14 @@ export default function EmployeesContent() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {employee.department || 'N/A'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {employee.position || 'N/A'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                    {employee.role || 'employee'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href={`/dashboard/employees/${employee.id}`} className="text-blue-600 hover:text-blue-900">
+                    {/* Links could eventually point to edit/view details page */}
+                    <Link href={`/dashboard/employees/${employee.uid}`} className="text-blue-600 hover:text-blue-900">
                       View
-                    </a>
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -161,4 +173,3 @@ export default function EmployeesContent() {
     </div>
   )
 }
-

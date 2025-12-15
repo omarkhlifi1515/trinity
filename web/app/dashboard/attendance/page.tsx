@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import attendanceContent from '@/components/attendance/attendanceContent'
+import AttendanceContent from '@/components/attendance/AttendanceContent'
 
-export default function attendancePage() {
-  return <attendanceContent />
+export default function AttendancePage() {
+  return <AttendanceContent />
 }
